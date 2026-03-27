@@ -1,6 +1,5 @@
 package org.hnau.upchain.core
 
-import io.ktor.utils.io.charsets.Charsets
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.serializer
 import org.hnau.commons.kotlin.castOrNull

@@ -56,7 +56,7 @@ private class UpchainRepositoryImpl(
 }
 
 suspend fun UpchainRepository.Companion.create(
-    updates: Sequence<Update>,
+    updates: Iterable<Update>,
     mediator: UpchainMediator,
 ): UpchainRepository {
     val initialUpchain: Upchain = withContext(Dispatchers.Default) {

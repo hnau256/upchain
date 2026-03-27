@@ -1,7 +1,7 @@
 package org.hnau.upchain.core
 
 operator fun Upchain.plus(
-    updates: Sequence<Update>,
+    updates: Iterable<Update>,
 ): Upchain = updates.fold(
     initial = this,
     operation = Upchain::plus,

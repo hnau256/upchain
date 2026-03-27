@@ -4,7 +4,7 @@ import arrow.core.NonEmptyList
 
 interface FileAccessor {
 
-    suspend fun readLines(): Sequence<String>
+    suspend fun readLines(): Iterable<String>
 
     suspend fun appendLines(
         lines: NonEmptyList<String>,
