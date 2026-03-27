@@ -18,6 +18,7 @@ internal actual fun FileAccessor.Companion.create(filename: String): FileAccesso
 private class FileAccessorImpl(
     private val path: Path,
 ) : FileAccessor {
+
     override suspend fun readLines(): Iterable<String> {
 
         val text = path
@@ -26,26 +27,28 @@ private class FileAccessorImpl(
             .ifNull { byteArrayOf() }
             .decodeToString()
 
-        if (text.endsWith('\n')) {
-            return text
-                .lineSequence()
-                .filter { it.isNotEmpty() }
-                .toList()
+        val lines = mutableListOf<String>()
+        var index = 0
+        while (index < text.length) {
+            val nextNewline = text.indexOf('\n', index)
+            if (nextNewline == -1) break
+            val line = text.substring(index, nextNewline)
+            if (line.isNotEmpty()) {
+                lines.add(line)
+            }
+            index = nextNewline + 1
         }
 
-        val lastNewlineIndex = text.lastIndexOf('\n')
-        val validLines = text
-            .substring(0, lastNewlineIndex + 1)
-            .lineSequence()
-            .filter { it.isNotEmpty() }
-            .toList()
+        if (index != text.length) {
+            writeAtomically(lines)
+        }
 
-        writeAtomically(validLines)
-
-        return validLines
+        return lines
     }
 
-    override suspend fun appendLines(lines: NonEmptyList<String>) {
+    override suspend fun appendLines(
+        lines: NonEmptyList<String>,
+    ) {
         Files.write(
             path,
             lines
@@ -57,22 +60,25 @@ private class FileAccessorImpl(
         )
     }
 
-    override suspend fun replaceLines(lines: List<String>) {
+    override suspend fun replaceLines(
+        lines: List<String>,
+    ) {
         writeAtomically(lines)
     }
 
-    private fun writeAtomically(lines: List<String>) {
+    private fun writeAtomically(
+        lines: List<String>,
+    ) {
         path.parent?.let { parent ->
             if (!parent.exists()) {
                 parent.createDirectories()
             }
         }
-        val tempPath =
-            Files.createTempFile(
-                path.parent ?: Path.of("."),
-                path.nameWithoutExtension,
-                ".tmp",
-            )
+        val tempPath = Files.createTempFile(
+            path.parent ?: Path.of("."),
+            path.nameWithoutExtension,
+            ".tmp",
+        )
         try {
             Files.write(tempPath, lines)
             Files.move(
