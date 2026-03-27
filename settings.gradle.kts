@@ -1,4 +1,4 @@
-rootProject.name = "UpChain"
+rootProject.name = "Upchain"
 
 pluginManagement {
     repositories {
@@ -10,7 +10,7 @@ pluginManagement {
 }
 
 plugins {
-    id("org.hnau.plugin.settings") version "1.5.0"
+    id("org.hnau.plugin.settings") version "1.6.0"
 }
 
 hnau {
