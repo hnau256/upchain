@@ -1,0 +1,18 @@
+package org.hnau.upchain.sync.core
+
+import kotlinx.serialization.Serializable
+import kotlin.jvm.JvmInline
+
+@Serializable
+@JvmInline
+value class ServerPort(
+    val port: Int,
+) {
+
+    companion object {
+
+        val default: ServerPort = ServerPort(
+            port = 26385,
+        )
+    }
+}
