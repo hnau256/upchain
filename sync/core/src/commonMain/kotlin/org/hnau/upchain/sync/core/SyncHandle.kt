@@ -4,6 +4,7 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.serializer
+import org.hnau.upchain.core.Upchain
 import org.hnau.upchain.core.UpchainHash
 import org.hnau.upchain.core.Update
 
@@ -44,7 +45,7 @@ sealed interface SyncHandle<O> {
 
         @Serializable
         data class Response(
-            val updates: List<Update>,
+            val updates: List<Upchain.Item>,
             val hasMoreUpdates: Boolean,
         )
     }

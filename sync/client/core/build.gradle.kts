@@ -1,5 +1,4 @@
 plugins {
-    id(hnau.plugins.kotlin.serialization.get().pluginId)
     id(hnau.plugins.hnau.kmp.get().pluginId)
 }
 
@@ -8,7 +7,8 @@ kotlin {
         commonMain {
             dependencies {
                 implementation(project(":core"))
-                implementation(libs.ktor.io)
+                implementation(project(":sync:core"))
+                implementation(libs.ktor.client.cio)
                 implementation(hnau.kotlinx.serialization.cbor)
             }
         }

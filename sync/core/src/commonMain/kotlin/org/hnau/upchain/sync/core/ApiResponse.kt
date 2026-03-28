@@ -4,8 +4,8 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.serializer
-import kotlinx.serialization.cbor.Cbor
 import org.hnau.commons.kotlin.mapper.Mapper
+import org.hnau.upchain.sync.core.utils.SyncConstants
 
 sealed interface ApiResponse<out T> {
 
@@ -30,7 +30,8 @@ sealed interface ApiResponse<out T> {
                 val head = it.first()
                 val tail = it.drop(1).toByteArray()
                 when (head) {
-                    zeroByte -> cbor
+                    zeroByte -> SyncConstants
+                        .cbor
                         .decodeFromByteArray(
                             deserializer = String.serializer(),
                             bytes = tail,
@@ -38,7 +39,8 @@ sealed interface ApiResponse<out T> {
                         .takeIf(String::isNotEmpty)
                         .let(::Error)
 
-                    else -> cbor
+                    else -> SyncConstants
+                        .cbor
                         .decodeFromByteArray(
                             deserializer = dataSerializer,
                             bytes = tail,
@@ -48,13 +50,15 @@ sealed interface ApiResponse<out T> {
             },
             reverse = { response ->
                 val (head, tail) = when (response) {
-                    is Success -> oneByte to cbor
+                    is Success -> oneByte to SyncConstants
+                        .cbor
                         .encodeToByteArray(
                             serializer = dataSerializer,
                             value = response.data,
                         )
 
-                    is Error -> zeroByte to cbor
+                    is Error -> zeroByte to SyncConstants
+                        .cbor
                         .encodeToByteArray(
                             serializer = String.serializer(),
                             value = response.error.orEmpty(),
@@ -71,7 +75,5 @@ sealed interface ApiResponse<out T> {
 
         private const val zeroByte: Byte = 0
         private const val oneByte: Byte = 1
-
-        private val cbor: Cbor = Cbor
     }
 }
