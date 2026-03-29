@@ -7,10 +7,9 @@ interface UpchainRepository {
 
     val upchain: StateFlow<Upchain>
 
-    suspend fun setNewUpchain(
-        currentUpchainToCheck: Upchain,
-        newUpchain: Upchain,
-    ): Boolean
+    suspend fun edit(
+        modify: (Upchain) -> Upchain,
+    )
 
     companion object
 }

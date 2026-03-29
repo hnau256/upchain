@@ -27,31 +27,30 @@ private class UpchainRepositoryImpl(
 
     private val accessUpchainMutex = Mutex()
 
-    override suspend fun setNewUpchain(
-        currentUpchainToCheck: Upchain,
-        newUpchain: Upchain
-    ): Boolean = accessUpchainMutex.withLock {
-        val currentUpchain = _upchain.value
-        if (currentUpchainToCheck != currentUpchain) {
-            return@withLock false
-        }
-        val updates = newUpchain.getUpdatesAfterHashIfPossible(
-            hash = currentUpchain.peekHash,
+    override suspend fun edit(
+        modify: (Upchain) -> Upchain,
+    ) = accessUpchainMutex.withLock {
+        val current = _upchain.value
+        val modified = modify(current)
+
+        val updates = modified.getUpdatesAfterHashIfPossible(
+            hash = current.peekHash,
         )
         when (updates) {
             null -> mediator.replace(
-                updates = newUpchain.items.map(Upchain.Item::update),
+                updates = modified
+                    .items
+                    .map(Upchain.Item::update),
             )
 
-            else -> updates.toNonEmptyListOrNull()?.let { nonEmptyUpdates ->
-                mediator.append(
-                    updates = nonEmptyUpdates,
-                )
-            }
+            else -> updates
+                .toNonEmptyListOrNull()
+                ?.let { nonEmptyUpdates ->
+                    mediator.append(updates = nonEmptyUpdates)
+                }
 
         }
-        _upchain.value = newUpchain
-        true
+        _upchain.value = modified
     }
 }
 

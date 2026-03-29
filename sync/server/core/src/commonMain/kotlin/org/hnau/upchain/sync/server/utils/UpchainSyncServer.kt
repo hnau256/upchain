@@ -7,7 +7,6 @@ import org.hnau.upchain.core.UpchainHash
 import org.hnau.upchain.core.Update
 import org.hnau.upchain.core.plus
 import org.hnau.upchain.core.repository.upchain.UpchainRepository
-import org.hnau.upchain.core.repository.upchain.update
 import org.hnau.upchain.sync.core.SyncHandle
 
 internal class UpchainSyncServer(
@@ -66,7 +65,7 @@ internal class UpchainSyncServer(
         updates: List<Update>,
     ): Result<Unit> = withRepository { upchainRepository ->
         result {
-            upchainRepository.update { currentUpchain ->
+            upchainRepository.edit { currentUpchain ->
                 if (currentUpchain.peekHash != peekHashToCheck) {
                     raise(IllegalStateException("Incorrect peek hash"))
                 }
