@@ -1,4 +1,4 @@
-package org.hnau.upchain.core.repository
+package org.hnau.upchain.core.repository.upchain
 
 import arrow.core.toNonEmptyListOrNull
 import kotlinx.coroutines.Dispatchers
@@ -55,7 +55,7 @@ private class UpchainRepositoryImpl(
     }
 }
 
-suspend fun UpchainRepository.Companion.create(
+internal suspend fun UpchainRepository.Companion.create(
     updates: Iterable<Update>,
     mediator: UpchainMediator,
 ): UpchainRepository {

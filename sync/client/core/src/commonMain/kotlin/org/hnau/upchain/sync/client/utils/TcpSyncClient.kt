@@ -1,4 +1,4 @@
-package org.hnau.upchain.sync.client
+package org.hnau.upchain.sync.client.utils
 
 import arrow.core.flatMap
 import io.ktor.network.selector.SelectorManager
@@ -10,6 +10,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.ExperimentalSerializationApi
+import org.hnau.upchain.sync.client.ServerAddress
 import org.hnau.upchain.sync.core.ApiResponse
 import org.hnau.upchain.sync.core.ServerPort
 import org.hnau.upchain.sync.core.SyncApi
@@ -18,7 +19,7 @@ import org.hnau.upchain.sync.core.utils.SyncConstants
 import org.hnau.upchain.sync.core.utils.readSizeWithBytes
 import org.hnau.upchain.sync.core.utils.writeSizeWithBytes
 
-class TcpSyncClient(
+internal class TcpSyncClient(
     private val address: ServerAddress,
     private val port: ServerPort,
 ) : SyncApi {
@@ -50,7 +51,7 @@ class TcpSyncClient(
                 }
         }
         val response = withContext(Dispatchers.Default) {
-            ApiResponse
+            ApiResponse.Companion
                 .createByteArrayMapper(
                     dataSerializer = request.responseSerializer,
                 )

@@ -1,10 +1,10 @@
-package org.hnau.upchain.core.repository.file
+package org.hnau.upchain.core.repository.file.upchain
 
 import arrow.core.NonEmptyList
 import org.hnau.upchain.core.Update
-import org.hnau.upchain.core.repository.UpchainMediator
-import org.hnau.upchain.core.repository.UpchainRepository
-import org.hnau.upchain.core.repository.create
+import org.hnau.upchain.core.repository.upchain.UpchainMediator
+import org.hnau.upchain.core.repository.upchain.UpchainRepository
+import org.hnau.upchain.core.repository.upchain.create
 
 suspend fun UpchainRepository.Companion.fileBased(
     filename: String,

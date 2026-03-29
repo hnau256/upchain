@@ -1,4 +1,4 @@
-package org.hnau.upchain.core.repository
+package org.hnau.upchain.core.repository.upchain
 
 import kotlinx.coroutines.flow.StateFlow
 import org.hnau.upchain.core.Upchain

@@ -7,12 +7,20 @@ import org.hnau.upchain.core.Update
 import org.hnau.upchain.sync.client.utils.UpchainSyncClientConstants
 import org.hnau.upchain.sync.client.utils.merge
 import org.hnau.upchain.sync.core.SyncHandle
-import org.hnau.upchain.sync.core.UpchainId
+import org.hnau.upchain.core.UpchainId
+import org.hnau.upchain.sync.client.utils.TcpSyncClient
+import org.hnau.upchain.sync.core.ServerPort
 
 suspend fun Upchain.syncWithRemote(
     upchainId: UpchainId,
-    remote: TcpSyncClient,
+    address: ServerAddress,
+    port: ServerPort,
 ): Result<Upchain> = result {
+
+    val remote = TcpSyncClient(
+        address = address,
+        port = port,
+    )
 
     var remoteHasMoreUpdates = true
     var minReceivedRemoteHash: UpchainHash? = null

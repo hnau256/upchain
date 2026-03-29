@@ -1,4 +1,4 @@
-package org.hnau.upchain.core.repository
+package org.hnau.upchain.core.repository.upchain
 
 import org.hnau.upchain.core.Upchain
 import org.hnau.upchain.core.Update

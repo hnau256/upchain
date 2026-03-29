@@ -6,6 +6,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.serializer
 import org.hnau.upchain.core.Upchain
 import org.hnau.upchain.core.UpchainHash
+import org.hnau.upchain.core.UpchainId
 import org.hnau.upchain.core.Update
 
 @Serializable
