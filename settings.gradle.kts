@@ -15,4 +15,9 @@ plugins {
 
 hnau {
     groupId = "org.hnau.upchain"
+
+    publish {
+        version = "1.0.0"
+        gitUrl = "https://github.com/hnau256/upchain"
+    }
 }
