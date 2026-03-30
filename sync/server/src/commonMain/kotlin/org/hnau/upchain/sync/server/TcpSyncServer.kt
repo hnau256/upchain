@@ -1,5 +1,6 @@
 package org.hnau.upchain.sync.server
 
+import co.touchlab.kermit.Logger
 import io.ktor.network.selector.SelectorManager
 import io.ktor.network.sockets.ServerSocket
 import io.ktor.network.sockets.aSocket
@@ -25,11 +26,12 @@ import org.hnau.upchain.sync.server.repository.UpchainsCreateOnlyRepository
 import org.hnau.upchain.sync.server.utils.ServerSyncApi
 import kotlin.time.Duration
 
+private val logger: Logger = Logger.withTag("TcpSyncServer")
+
 suspend fun tcpSyncServer(
-    port: ServerPort,
     repository: UpchainsCreateOnlyRepository,
+    port: ServerPort = ServerPort.default,
     tcpTimeout: Duration = SyncConstants.tcpTimeout,
-    onThrowable: (Throwable) -> Unit,
 ): Result<Nothing> = coroutineScope {
     runCatching {
         val api = ServerSyncApi(
@@ -48,13 +50,12 @@ suspend fun tcpSyncServer(
                         circle(
                             serverSocket = serverSocket,
                             api = api,
-                            onThrowable = onThrowable,
                             timeout = tcpTimeout,
                         )
                     } catch (ex: CancellationException) {
                         throw ex
                     } catch (th: Throwable) {
-                        onThrowable(th)
+                        logError(th) { "main circle" }
                     }
                 }
                 awaitCancellation()
@@ -65,7 +66,7 @@ suspend fun tcpSyncServer(
                 } catch (ex: CancellationException) {
                     throw ex
                 } catch (th: Throwable) {
-                    onThrowable(th)
+                    logError(th) { "stopping server" }
                 }
             }
         }
@@ -76,7 +77,6 @@ private suspend fun CoroutineScope.circle(
     serverSocket: ServerSocket,
     api: SyncApi,
     timeout: Duration,
-    onThrowable: (Throwable) -> Unit,
 ) {
     val clientSocket = serverSocket.accept()
     launch {
@@ -98,7 +98,7 @@ private suspend fun CoroutineScope.circle(
         } catch (ex: CancellationException) {
             throw ex
         } catch (th: Throwable) {
-            onThrowable(th)
+            logError(th) { "handling client from ${clientSocket.localAddress}" }
         }
     }
 }
@@ -126,3 +126,10 @@ private suspend fun <O, I : SyncHandle<O>> SyncApi.handleTyped(
             .createByteArrayMapper(request.responseSerializer)
             .reverse(response)
     }
+
+private inline fun logError(
+    error: Throwable,
+    action: () -> String,
+) {
+    logger.w(error) { "Error while ${action()}" }
+}

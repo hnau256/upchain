@@ -17,7 +17,7 @@ import org.hnau.upchain.sync.core.SyncApi
 suspend fun UpchainRepository.sync(
     id: UpchainId,
     remoteAddress: ServerAddress,
-    remotePort: ServerPort,
+    remotePort: ServerPort = ServerPort.default,
 ): Result<Unit> = result {
 
     val api: SyncApi = TcpSyncClient(
