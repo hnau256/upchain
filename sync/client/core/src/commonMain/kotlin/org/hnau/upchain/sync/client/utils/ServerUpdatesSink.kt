@@ -1,6 +1,7 @@
 package org.hnau.upchain.sync.client.utils
 
 import arrow.core.raise.result
+import org.hnau.commons.kotlin.ifTrue
 import org.hnau.upchain.core.Upchain
 import org.hnau.upchain.core.UpchainHash
 import org.hnau.upchain.core.UpchainId
@@ -25,7 +26,7 @@ internal class RemoteUpdatesSink(
             return@result true
         }
         val result = flush().bind()
-        serverPeekBeforeBuffer = item.hash
+        result.ifTrue { serverPeekBeforeBuffer = item.hash }
         result
     }
 
@@ -48,7 +49,7 @@ internal class RemoteUpdatesSink(
                 }
             }
 
-        buffer.clear()
+        pushed.ifTrue { buffer.clear() }
 
         pushed
     }
