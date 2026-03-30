@@ -6,16 +6,23 @@ import io.ktor.utils.io.readByteArray
 import io.ktor.utils.io.readInt
 import io.ktor.utils.io.writeByteArray
 import io.ktor.utils.io.writeInt
+import kotlinx.coroutines.withTimeout
+import kotlin.time.Duration
 
-suspend fun ByteReadChannel.readSizeWithBytes(): ByteArray {
+suspend fun ByteReadChannel.readSizeWithBytes(
+    timeout: Duration,
+): ByteArray = withTimeout(timeout) {
     val size = readInt()
-    return readByteArray(size)
+    readByteArray(size)
 }
 
 suspend fun ByteWriteChannel.writeSizeWithBytes(
     bytes: ByteArray,
+    timeout: Duration,
 ) {
-    writeInt(bytes.size)
-    writeByteArray(bytes)
-    flush()
+    withTimeout(timeout) {
+        writeInt(bytes.size)
+        writeByteArray(bytes)
+        flush()
+    }
 }

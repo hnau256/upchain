@@ -23,10 +23,12 @@ import org.hnau.upchain.sync.core.utils.readSizeWithBytes
 import org.hnau.upchain.sync.core.utils.writeSizeWithBytes
 import org.hnau.upchain.sync.server.repository.UpchainsCreateOnlyRepository
 import org.hnau.upchain.sync.server.utils.ServerSyncApi
+import kotlin.time.Duration
 
 suspend fun tcpSyncServer(
     port: ServerPort,
     repository: UpchainsCreateOnlyRepository,
+    tcpTimeout: Duration = SyncConstants.tcpTimeout,
     onThrowable: (Throwable) -> Unit,
 ): Result<Nothing> = coroutineScope {
     runCatching {
@@ -34,16 +36,20 @@ suspend fun tcpSyncServer(
             scope = this@coroutineScope,
             repository = repository,
         )
+        val selectorManager = SelectorManager(Dispatchers.IO)
         withContext(Dispatchers.IO) {
-            val serverSocket = aSocket(SelectorManager(Dispatchers.IO))
-                .tcp()
-                .bind(port = port.port)
+            val serverSocket =
+                aSocket(selectorManager)
+                    .tcp()
+                    .bind(port = port.port)
             try {
                 while (true) {
                     try {
-                        circleUnsafe(
+                        circle(
                             serverSocket = serverSocket,
                             api = api,
+                            onThrowable = onThrowable,
+                            timeout = tcpTimeout,
                         )
                     } catch (ex: CancellationException) {
                         throw ex
@@ -55,6 +61,7 @@ suspend fun tcpSyncServer(
             } finally {
                 try {
                     serverSocket.close()
+                    selectorManager.close()
                 } catch (ex: CancellationException) {
                     throw ex
                 } catch (th: Throwable) {
@@ -65,20 +72,33 @@ suspend fun tcpSyncServer(
     }
 }
 
-private suspend fun CoroutineScope.circleUnsafe(
+private suspend fun CoroutineScope.circle(
     serverSocket: ServerSocket,
     api: SyncApi,
+    timeout: Duration,
+    onThrowable: (Throwable) -> Unit,
 ) {
     val clientSocket = serverSocket.accept()
     launch {
-        clientSocket.use { clientSocket ->
-            val requestBytes = clientSocket
-                .openReadChannel()
-                .readSizeWithBytes()
-            val responseBytes = api.handle(requestBytes)
-            clientSocket
-                .openWriteChannel()
-                .writeSizeWithBytes(responseBytes)
+        try {
+            clientSocket.use { clientSocket ->
+                val requestBytes = clientSocket
+                    .openReadChannel()
+                    .readSizeWithBytes(
+                        timeout = timeout,
+                    )
+                val responseBytes = api.handle(requestBytes)
+                clientSocket
+                    .openWriteChannel()
+                    .writeSizeWithBytes(
+                        bytes = responseBytes,
+                        timeout = timeout,
+                    )
+            }
+        } catch (ex: CancellationException) {
+            throw ex
+        } catch (th: Throwable) {
+            onThrowable(th)
         }
     }
 }
@@ -94,13 +114,12 @@ private suspend fun SyncApi.handle(
     return handleTyped(typedRequest)
 }
 
-
 private suspend fun <O, I : SyncHandle<O>> SyncApi.handleTyped(
     request: I,
 ): ByteArray = handle(request)
     .fold(
         onSuccess = { result -> ApiResponse.Success(result) },
-        onFailure = { error -> ApiResponse.Error(error.message) }
+        onFailure = { error -> ApiResponse.Error(error.message) },
     )
     .let { response ->
         ApiResponse
