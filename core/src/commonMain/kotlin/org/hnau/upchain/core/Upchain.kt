@@ -2,10 +2,12 @@ package org.hnau.upchain.core
 
 import kotlinx.serialization.Serializable
 import org.hnau.commons.kotlin.castOrNull
+import org.hnau.upchain.core.utils.ContentHash
 
 class Upchain private constructor(
     val items: List<Item>,
     val indexesByHash: Map<UpchainHash, Int>,
+    val contentHashes: Set<ContentHash>,
 ) {
 
     @Serializable
@@ -24,27 +26,40 @@ class Upchain private constructor(
         val newHash = peekHash.calcNext(
             update = update,
         )
+        val item = Item(
+            update = update,
+            hash = newHash,
+        )
+        val itemHash = item.contentHash
+        if (itemHash in contentHashes) {
+            return this
+        }
         return Upchain(
-            items = items + Item(
-                update = update,
-                hash = newHash,
-            ),
+            items = items + item,
             indexesByHash = indexesByHash + (newHash to items.size),
+            contentHashes = contentHashes + itemHash,
         )
     }
 
     fun take(
         count: Int,
     ): Pair<Upchain, List<Update>> {
+        val newItems = items.take(count)
         val upchain = Upchain(
-            items = items.take(count),
+            items = newItems,
             indexesByHash = indexesByHash.filterValues { it < count },
+            contentHashes = newItems
+                .map { item -> item.contentHash }
+                .toSet(),
         )
         val detachedUpdates = items
             .drop(count)
             .map(Item::update)
         return upchain to detachedUpdates
     }
+
+    private val Item.contentHash: ContentHash
+        get() = ContentHash.create(update)
 
     override fun equals(
         other: Any?,
@@ -61,6 +76,7 @@ class Upchain private constructor(
         val empty: Upchain = Upchain(
             items = emptyList(),
             indexesByHash = emptyMap(),
+            contentHashes = emptySet(),
         )
     }
 }
