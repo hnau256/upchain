@@ -33,6 +33,9 @@ internal suspend fun UpchainsRepository.Companion.create(
             id: UpchainId,
         ) {
             update { currentList ->
+                if (currentList.any { it.id == id }) {
+                    return@update currentList
+                }
                 createUpchain(id)
                 val repository = createRepository(id)
                 val newItem = KeyValue(

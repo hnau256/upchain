@@ -87,7 +87,7 @@ class UpchainsSyncServer(
         upchainId: UpchainId,
         peekHashToCheck: UpchainHash?,
         updates: List<Update>,
-    ): Result<Unit> = run {
+    ): Result<SyncHandle.AppendUpdates.Response> = run {
         repository.createUpchain(upchainId)
         upchains.mapNotNull { it[upchainId] }.first()
     }.appendUpdates(

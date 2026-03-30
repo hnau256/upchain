@@ -48,19 +48,16 @@ internal class ServerSyncApi(
 
     private suspend fun getMaxToMinUpdates(
         request: SyncHandle.GetMaxToMinUpdates,
-    ): Result<SyncHandle.GetMaxToMinUpdates.Response> = syncServer
-        .getMaxToMinUpdates(
-            upchainId = request.upchainId,
-            before = request.before,
-        )
+    ): Result<SyncHandle.GetMaxToMinUpdates.Response> = syncServer.getMaxToMinUpdates(
+        upchainId = request.upchainId,
+        before = request.before,
+    )
 
     private suspend fun appendUpdates(
         request: SyncHandle.AppendUpdates,
-    ): Result<SyncHandle.AppendUpdates.Response> = syncServer
-        .appendUpdates(
-            upchainId = request.upchainId,
-            peekHashToCheck = request.peekHashToCheck,
-            updates = request.updates,
-        )
-        .map { SyncHandle.AppendUpdates.Response }
+    ): Result<SyncHandle.AppendUpdates.Response> = syncServer.appendUpdates(
+        upchainId = request.upchainId,
+        peekHashToCheck = request.peekHashToCheck,
+        updates = request.updates,
+    )
 }

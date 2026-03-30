@@ -63,7 +63,14 @@ sealed interface SyncHandle<O> {
             get() = Response.serializer()
 
         @Serializable
-        data object Response
+        sealed interface Response {
+
+            @Serializable
+            data object Success: Response
+
+            @Serializable
+            data object ServerAhead: Response
+        }
     }
 
     companion object {

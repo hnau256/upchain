@@ -63,13 +63,22 @@ internal class UpchainSyncServer(
     suspend fun appendUpdates(
         peekHashToCheck: UpchainHash?,
         updates: List<Update>,
-    ): Result<Unit> = withRepository { upchainRepository ->
+    ): Result<SyncHandle.AppendUpdates.Response> = withRepository { upchainRepository ->
         result {
-            upchainRepository.edit { currentUpchain ->
-                if (currentUpchain.peekHash != peekHashToCheck) {
-                    raise(IllegalStateException("Incorrect peek hash"))
+            upchainRepository.editWithResult { currentUpchain ->
+                when (peekHashToCheck) {
+
+                    currentUpchain.peekHash -> {
+                        val updated = currentUpchain + updates
+                        updated to SyncHandle.AppendUpdates.Response.Success
+                    }
+
+                    in currentUpchain.indexesByHash.keys ->
+                        currentUpchain to SyncHandle.AppendUpdates.Response.ServerAhead
+
+                    else ->
+                        raise(IllegalStateException("Incorrect peek hash"))
                 }
-                currentUpchain + updates
             }
         }
     }
