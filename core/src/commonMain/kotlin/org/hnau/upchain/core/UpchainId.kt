@@ -22,5 +22,9 @@ value class UpchainId(
 
         val stringMapper: Mapper<String, UpchainId> =
             Mapper.stringToUuid + uuidMapper
+
+        fun createRandom(): UpchainId = Uuid
+            .random()
+            .let(uuidMapper.direct)
     }
 }
