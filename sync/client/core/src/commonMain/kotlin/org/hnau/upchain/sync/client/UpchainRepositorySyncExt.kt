@@ -75,7 +75,7 @@ private suspend fun UpchainRepository.pull(
 
         val actualCommonCount = commonUpdatesCount ?: 0
         val (commonBase, afterServer) = upchain.take(actualCommonCount)
-        val serverState = commonBase + serverUpdatesToApply
+        val serverState = commonBase + serverUpdatesToApply.asReversed()
         val merged = serverState + afterServer
 
         merged to serverState.peekHash
