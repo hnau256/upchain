@@ -106,10 +106,7 @@ private suspend fun UpchainRepository.push(
         .fold(
             initial = true,
         ) { acc, item ->
-            if (!acc) {
-                return@fold false
-            }
-            sink.push(item).bind()
+            acc && sink.push(item).bind()
         }
 
     if (!pushed) {
