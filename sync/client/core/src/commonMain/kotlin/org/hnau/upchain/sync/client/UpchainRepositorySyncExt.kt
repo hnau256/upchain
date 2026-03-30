@@ -2,6 +2,7 @@ package org.hnau.upchain.sync.client
 
 import arrow.core.raise.result
 import org.hnau.commons.kotlin.foldNullable
+import org.hnau.commons.kotlin.ifNull
 import org.hnau.upchain.core.UpchainHash
 import org.hnau.upchain.core.UpchainId
 import org.hnau.upchain.core.Update
@@ -97,7 +98,12 @@ private suspend fun UpchainRepository.push(
     val upchain = upchain.value
 
     val commonBaseSize = serverPeekHash
-        ?.let { upchain.indexesByHash.getValue(it) + 1 }
+        ?.let {
+            upchain
+                .indexesByHash[it]
+                .ifNull { return@result false }
+                .plus(1)
+        }
         ?: 0
 
     val pushed = upchain
