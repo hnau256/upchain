@@ -1,6 +1,5 @@
 package org.hnau.upchain.sync.server.utils
 
-import arrow.core.NonEmptyList
 import arrow.core.NonEmptySet
 import arrow.core.identity
 import arrow.core.raise.result

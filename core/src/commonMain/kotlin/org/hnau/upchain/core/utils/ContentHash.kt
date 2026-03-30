@@ -4,7 +4,6 @@ import org.hnau.commons.kotlin.castOrNull
 import org.hnau.commons.kotlin.mapper.Mapper
 import org.hnau.commons.kotlin.mapper.plus
 import org.hnau.commons.kotlin.mapper.stringAsBase64ByteArray
-import org.hnau.upchain.core.UpchainHash
 import org.hnau.upchain.core.Update
 
 class ContentHash private constructor(
@@ -17,7 +16,7 @@ class ContentHash private constructor(
     override fun equals(
         other: Any?,
     ): Boolean = other
-        ?.castOrNull<UpchainHash>()
+        ?.castOrNull<ContentHash>()
         ?.takeIf { hash.contentEquals(it.hash) } != null
 
     override fun hashCode(): Int = hash.contentHashCode()

@@ -10,7 +10,7 @@ import org.hnau.upchain.core.UpchainId
 import org.hnau.upchain.sync.core.SyncApi
 import org.hnau.upchain.sync.core.SyncHandle
 
-class ServerUpdatesProvider(
+internal class ServerUpdatesProvider(
     id: UpchainId,
     api: SyncApi,
 ) {
