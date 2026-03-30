@@ -109,9 +109,5 @@ private suspend fun UpchainRepository.push(
             acc && sink.push(item).bind()
         }
 
-    if (!pushed) {
-        return@result false
-    }
-
-    sink.flush().bind()
+    pushed && sink.flush().bind()
 }
