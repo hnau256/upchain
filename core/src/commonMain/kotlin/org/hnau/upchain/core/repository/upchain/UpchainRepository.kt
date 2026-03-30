@@ -8,7 +8,7 @@ interface UpchainRepository {
     val upchain: StateFlow<Upchain>
 
     suspend fun <R> editWithResult(
-        modify: (Upchain) -> Pair<Upchain, R>,
+        modify: suspend (Upchain) -> Pair<Upchain, R>,
     ): R
 
     companion object

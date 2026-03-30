@@ -28,7 +28,7 @@ private class UpchainRepositoryImpl(
     private val accessUpchainMutex = Mutex()
 
     override suspend fun <R> editWithResult(
-        modify: (Upchain) -> Pair<Upchain, R>,
+        modify: suspend (Upchain) -> Pair<Upchain, R>,
     ): R = accessUpchainMutex.withLock {
         val current = _upchain.value
         val (modified, result) = modify(current)

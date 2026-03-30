@@ -5,7 +5,7 @@ import org.hnau.upchain.core.Update
 import org.hnau.upchain.core.plus
 
 suspend fun UpchainRepository.edit(
-    modify: (Upchain) -> Upchain,
+    modify: suspend (Upchain) -> Upchain,
 ) {
     editWithResult { current ->
         val modified = modify(current)
