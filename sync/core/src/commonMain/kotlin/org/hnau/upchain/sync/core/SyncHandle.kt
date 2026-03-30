@@ -1,8 +1,15 @@
+@file:UseSerializers(
+    NonEmptySetSerializer::class,
+)
+
 package org.hnau.upchain.sync.core
 
+import arrow.core.NonEmptySet
+import arrow.core.serialization.NonEmptySetSerializer
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.UseSerializers
 import kotlinx.serialization.builtins.serializer
 import org.hnau.upchain.core.Upchain
 import org.hnau.upchain.core.UpchainHash
@@ -16,7 +23,9 @@ sealed interface SyncHandle<O> {
 
     @Serializable
     @SerialName("get_upchains")
-    data object GetUpchains : SyncHandle<GetUpchains.Response> {
+    data class GetUpchains(
+        val clientsUpchains: NonEmptySet<UpchainId>,
+    ) : SyncHandle<GetUpchains.Response> {
 
         override val responseSerializer: KSerializer<Response>
             get() = Response.serializer()
@@ -66,10 +75,10 @@ sealed interface SyncHandle<O> {
         sealed interface Response {
 
             @Serializable
-            data object Success: Response
+            data object Success : Response
 
             @Serializable
-            data object ServerAhead: Response
+            data object ServerAhead : Response
         }
     }
 

@@ -20,7 +20,7 @@ internal class ServerSyncApi(
         request: I,
     ): Result<O> = when (request) {
 
-        SyncHandle.GetUpchains ->
+        is SyncHandle.GetUpchains ->
             getUpchains(request) as Result<O>
 
         is SyncHandle.GetMaxToMinUpdates ->
@@ -33,7 +33,9 @@ internal class ServerSyncApi(
     private suspend fun getUpchains(
         request: SyncHandle.GetUpchains,
     ): Result<SyncHandle.GetUpchains.Response> = syncServer
-        .getUpchains()
+        .getUpchains(
+            clientsUpchains = request.clientsUpchains,
+        )
         .map { upchains ->
             SyncHandle.GetUpchains.Response(
                 upchains = upchains

@@ -1,5 +1,7 @@
 package org.hnau.upchain.sync.server.utils
 
+import arrow.core.NonEmptyList
+import arrow.core.NonEmptySet
 import arrow.core.identity
 import arrow.core.raise.result
 import kotlinx.coroutines.CoroutineScope
@@ -44,10 +46,13 @@ class UpchainsSyncServer(
         val peekHash: UpchainHash?,
     )
 
-    suspend fun getUpchains(): Result<List<Upchain>> = result {
+    suspend fun getUpchains(
+        clientsUpchains: NonEmptySet<UpchainId>,
+    ): Result<List<Upchain>> = result {
         coroutineScope {
             upchains.value.let { servers ->
                 servers
+                    .filter { it.key in clientsUpchains }
                     .mapValues { (_, server) ->
                         async { server.getUpchain() }
                     }
