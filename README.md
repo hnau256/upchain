@@ -11,6 +11,7 @@ Upchain is an immutable, append-only chain of updates where each link is cryptog
 - **Immutable Append-Only Chain**: Once added, updates cannot be modified or removed
 - **Cryptographic Linking**: Each update is hashed with the previous one using SHA-256
 - **Content Deduplication**: Duplicate updates are automatically detected and ignored
+- **Built-in Synchronization**: TCP-based sync protocol for multi-device data replication
 - **Kotlin Multiplatform**: Supports JVM and Linux X64 targets
 - **Coroutines-Based**: Built on Kotlin Coroutines with StateFlow for reactive updates
 - **Pluggable Storage**: File-based storage included, with support for custom mediators
@@ -215,6 +216,105 @@ class NetworkMediator(
 }
 ```
 
+## Synchronization Modules
+
+The `:sync` modules provide TCP-based synchronization between upchain instances over the network.
+
+### Module Structure
+
+```
+:sync:core      - Shared sync protocol and API
+:sync:client    - Client-side synchronization
+:sync:server    - Server-side synchronization
+```
+
+### Sync Protocol
+
+The synchronization protocol uses a three-way sync algorithm:
+
+```
+┌─────────────┐                    ┌─────────────┐
+│   Client    │ ◄────────────────► │   Server    │
+│  (pull)     │   GetUpdates       │             │
+│             │   AppendUpdates    │             │
+└─────────────┘                    └─────────────┘
+```
+
+#### Sync Algorithm
+
+1. **Pull Phase**: Client downloads updates from server starting from common hash
+   - Server provides updates in reverse order (newest first)
+   - Client finds common base with local chain
+   - Client merges remote updates with local diverged updates
+
+2. **Push Phase**: Client uploads local updates to server
+   - Client sends updates starting from server's current hash
+   - Server validates hash chain consistency
+   - Server accepts or rejects based on hash match
+
+#### Conflict Resolution
+
+When client and server have diverged (different updates after common base):
+
+```
+Client:    A → B → C (local)
+                ↓
+Server:    A → B → D (remote)
+
+After sync: A → B → D → C (merged)
+```
+
+Both client and server end up with the merged chain containing all updates.
+
+### Client Usage
+
+```kotlin
+import org.hnau.upchain.sync.client.*
+import org.hnau.upchain.sync.core.ServerPort
+
+// Sync a repository with a remote server
+val result = repository.sync(
+    id = upchainId,
+    remoteAddress = ServerAddress("192.168.1.100"),
+    remotePort = ServerPort.default,  // port 26385
+)
+
+result.onSuccess {
+    println("Sync completed successfully")
+}.onFailure { error ->
+    println("Sync failed: ${error.message}")
+}
+```
+
+### Server Usage
+
+```kotlin
+import org.hnau.upchain.sync.server.*
+import org.hnau.upchain.sync.server.repository.*
+import org.hnau.upchain.sync.core.ServerPort
+
+// Start TCP sync server
+val result = tcpSyncServer(
+    port = ServerPort.default,
+    repository = upchainsRepository.toCreateOnly(),
+    onThrowable = { error ->
+        println("Server error: ${error.message}")
+    }
+)
+
+// Server runs indefinitely until cancelled
+```
+
+### Sync API
+
+The sync protocol uses sealed class messages:
+
+- `GetUpchains` - Request list of available upchains from server
+- `GetMaxToMinUpdates` - Request updates in reverse order with pagination
+- `AppendUpdates` - Push updates to server (with hash validation)
+
+All messages are serialized using CBOR over TCP sockets.
+
 ## Architecture
 
 ```
@@ -235,6 +335,22 @@ org.hnau.upchain.core.repository
 └── upchains
     ├── UpchainsRepository     # Multi-chain repository
     └── FileBasedUpchainsRepository # File implementation
+
+org.hnau.upchain.sync
+├── core
+│   ├── SyncApi                # Sync API interface
+│   ├── SyncHandle             # Sealed protocol messages
+│   └── ServerPort             # Port configuration
+├── client
+│   ├── sync()                 # Extension for syncing repository
+│   ├── TcpSyncClient          # TCP client implementation
+│   ├── ServerUpdatesProvider  # Pull updates from server
+│   └── RemoteUpdatesSink      # Push updates to server
+└── server
+    ├── tcpSyncServer()        # Server entry point
+    ├── ServerSyncApi          # Request dispatcher
+    ├── UpchainSyncServer      # Single upchain handler
+    └── UpchainsSyncServer     # Multi-upchain handler
 ```
 
 ## Dependencies
@@ -243,7 +359,7 @@ org.hnau.upchain.core.repository
 - Kotlinx Coroutines 1.10.2
 - Kotlinx Serialization 1.10.0
 - Arrow Core 2.2.2 (for NonEmptyList)
-- Ktor (optional, for networking)
+- Ktor Network 3.4.1 (for sync modules)
 
 ## License
 
