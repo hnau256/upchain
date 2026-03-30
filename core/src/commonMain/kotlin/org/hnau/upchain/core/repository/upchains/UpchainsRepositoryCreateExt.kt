@@ -8,7 +8,7 @@ import org.hnau.commons.kotlin.coroutines.flow.state.mutable.toMutableStateFlowA
 import org.hnau.upchain.core.UpchainId
 import org.hnau.upchain.core.repository.upchain.UpchainRepository
 
-internal suspend fun UpchainsRepository.Companion.create(
+suspend fun UpchainsRepository.Companion.create(
     ids: List<UpchainId>,
     createRepository: suspend (id: UpchainId) -> UpchainRepository,
     createUpchain: suspend (id: UpchainId) -> Unit,

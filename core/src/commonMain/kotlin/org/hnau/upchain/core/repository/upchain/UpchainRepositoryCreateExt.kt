@@ -55,7 +55,7 @@ private class UpchainRepositoryImpl(
     }
 }
 
-internal suspend fun UpchainRepository.Companion.create(
+suspend fun UpchainRepository.Companion.create(
     updates: Iterable<Update>,
     mediator: UpchainMediator,
 ): UpchainRepository {
