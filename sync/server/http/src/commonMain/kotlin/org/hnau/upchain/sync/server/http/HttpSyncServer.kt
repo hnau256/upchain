@@ -46,7 +46,7 @@ private fun Application.configureServer(
     api: SyncApi,
 ) {
     routing {
-        post("/") {
+        post(SyncConstantsHttp.route) {
             val clientAddress = call.request.origin.remoteAddress
             try {
                 val request = call.receiveText()
