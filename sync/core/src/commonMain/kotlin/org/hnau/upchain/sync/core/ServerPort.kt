@@ -9,10 +9,5 @@ value class ServerPort(
     val port: Int,
 ) {
 
-    companion object {
-
-        val default: ServerPort = ServerPort(
-            port = 26385,
-        )
-    }
+    companion object
 }

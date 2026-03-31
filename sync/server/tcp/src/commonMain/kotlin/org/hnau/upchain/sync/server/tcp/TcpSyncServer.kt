@@ -21,13 +21,16 @@ import org.hnau.upchain.sync.core.SyncHandle
 import org.hnau.upchain.sync.core.utils.SyncConstants
 import org.hnau.upchain.sync.core.utils.readSizeWithBytes
 import org.hnau.upchain.sync.core.utils.writeSizeWithBytes
+import org.hnau.upchain.sync.tcp.SyncConstantsTcp
+import org.hnau.upchain.sync.tcp.createCborMapper
+import org.hnau.upchain.sync.tcp.defaultTcp
 import kotlin.time.Duration
 
 private val logger: Logger = Logger.withTag("TcpSyncServer")
 
 suspend fun tcpSyncServer(
     api: SyncApi,
-    port: ServerPort = ServerPort.default,
+    port: ServerPort = ServerPort.defaultTcp,
     tcpTimeout: Duration = SyncConstants.tcpTimeout,
 ): Result<Nothing> = runCatching {
     val selectorManager = SelectorManager(Dispatchers.IO)
@@ -98,7 +101,7 @@ private suspend fun CoroutineScope.circle(
 private suspend fun SyncApi.handle(
     request: ByteArray,
 ): ByteArray {
-    val typedRequest = SyncConstants.cbor.decodeFromByteArray(
+    val typedRequest = SyncConstantsTcp.cbor.decodeFromByteArray(
         SyncHandle.serializer,
         request,
     )
@@ -114,7 +117,7 @@ private suspend fun <O, I : SyncHandle<O>> SyncApi.handleTyped(
     )
     .let { response ->
         ApiResponse
-            .createByteArrayMapper(request.responseSerializer)
+            .createCborMapper(request.responseSerializer)
             .reverse(response)
     }
 

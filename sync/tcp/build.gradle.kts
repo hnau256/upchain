@@ -6,9 +6,7 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
-                api(project(":sync:client:core"))
-                api(project(":sync:tcp"))
-                implementation(libs.ktor.client.cio)
+                api(project(":sync:core"))
                 implementation(hnau.kotlinx.serialization.cbor)
             }
         }

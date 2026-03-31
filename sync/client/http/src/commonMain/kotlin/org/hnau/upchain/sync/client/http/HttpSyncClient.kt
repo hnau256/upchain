@@ -4,6 +4,7 @@ import arrow.core.flatMap
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.request.port
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
@@ -12,36 +13,28 @@ import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.launch
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.coroutines.withContext
+import org.hnau.upchain.sync.core.ApiResponse
+import org.hnau.upchain.sync.core.ServerPort
 import org.hnau.upchain.sync.core.SyncApi
 import org.hnau.upchain.sync.core.SyncHandle
+import org.hnau.upchain.sync.http.SyncConstantsHttp
+import org.hnau.upchain.sync.http.createJsonMapper
+import org.hnau.upchain.sync.http.defaultHttp
 
 class HttpSyncClient(
     scope: CoroutineScope,
     private val baseUrl: String,
+    private val port: ServerPort = ServerPort.defaultHttp,
 ) : SyncApi {
 
     private val client: HttpClient = HttpClient {
         install(ContentNegotiation) {
-            json(
-                Json {
-                    prettyPrint = false
-                    isLenient = true
-                    ignoreUnknownKeys = true
-                },
-            )
+            json(SyncConstantsHttp.json)
         }
-    }
-
-    private val json: Json = Json {
-        prettyPrint = false
-        isLenient = true
-        ignoreUnknownKeys = true
     }
 
     init {
@@ -60,14 +53,15 @@ class HttpSyncClient(
         request: I,
     ): Result<O> = runCatching {
 
-        val requestJson: String = json.encodeToString(
+        val requestJson: String = SyncConstantsHttp.json.encodeToString(
             serializer = SyncHandle.serializer,
             value = request as SyncHandle<*>,
         )
 
-        val responseJson: JsonElement = client
+        val responseJson: String = client
             .post(baseUrl) {
                 contentType(ContentType.Application.Json)
+                port = this@HttpSyncClient.port.port
                 setBody(
                     TextContent(
                         text = requestJson,
@@ -77,33 +71,21 @@ class HttpSyncClient(
             }
             .body()
 
-        responseJson
-    }.flatMap { responseJson ->
-        val jsonObject = responseJson.jsonObject
-        val type = jsonObject["type"]?.jsonPrimitive?.content
-
-        when (type) {
-            "success" -> {
-                val dataJson: JsonElement = jsonObject["data"] ?: return@flatMap Result.failure(
-                    Exception("Missing data field in success response"),
+        val response = withContext(Dispatchers.Default) {
+            ApiResponse
+                .createJsonMapper(
+                    dataSerializer = request.responseSerializer,
                 )
-                val data: O = json.decodeFromJsonElement(
-                    deserializer = request.responseSerializer,
-                    element = dataJson,
-                )
-                Result.success(data)
-            }
+                .direct(responseJson)
+        }
+        response
+    }.flatMap { response ->
+        when (response) {
+            is ApiResponse.Success ->
+                Result.success(response.data)
 
-            "error" -> {
-                val errorMessage = jsonObject["error"]?.jsonPrimitive?.content
-                Result.failure(
-                    Exception("Error received from sync server: $errorMessage"),
-                )
-            }
-
-            else -> Result.failure(
-                Exception("Unknown response type: $type"),
-            )
+            is ApiResponse.Error ->
+                Result.failure(Exception("Error received from sync server: ${response.error}"))
         }
     }
 }

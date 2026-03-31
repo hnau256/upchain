@@ -1,13 +1,14 @@
 plugins {
-    id(hnau.plugins.hnau.kmp.get().pluginId,)
+    id(hnau.plugins.hnau.kmp.get().pluginId)
 }
 
 kotlin {
     jvm()
     sourceSets {
-        jvmMain {
+        commonMain {
             dependencies {
                 api(project(":sync:server:core"))
+                api(project(":sync:http"))
                 implementation(libs.ktor.server.core)
                 implementation(libs.ktor.server.cio)
                 implementation(libs.ktor.server.content.negotiation)

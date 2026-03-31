@@ -22,12 +22,15 @@ import org.hnau.upchain.sync.core.SyncHandle
 import org.hnau.upchain.sync.core.utils.SyncConstants
 import org.hnau.upchain.sync.core.utils.readSizeWithBytes
 import org.hnau.upchain.sync.core.utils.writeSizeWithBytes
+import org.hnau.upchain.sync.tcp.SyncConstantsTcp
+import org.hnau.upchain.sync.tcp.createCborMapper
+import org.hnau.upchain.sync.tcp.defaultTcp
 import kotlin.time.Duration
 
 internal class TcpSyncClient(
     scope: CoroutineScope,
     private val address: ServerAddress,
-    private val port: ServerPort = ServerPort.default,
+    private val port: ServerPort = ServerPort.defaultTcp,
     private val tcpTimeout: Duration = SyncConstants.tcpTimeout,
 ) : SyncApi {
 
@@ -51,7 +54,7 @@ internal class TcpSyncClient(
         request: I,
     ): Result<O> = runCatching {
         val requestBytes = withContext(Dispatchers.Default) {
-            SyncConstants.cbor.encodeToByteArray(SyncHandle.serializer, request)
+            SyncConstantsTcp.cbor.encodeToByteArray(SyncHandle.serializer, request)
         }
         val responseBytes = withContext(Dispatchers.IO) {
             withTimeout(tcpTimeout) {
@@ -84,7 +87,7 @@ internal class TcpSyncClient(
         }
         val response = withContext(Dispatchers.Default) {
             ApiResponse
-                .createByteArrayMapper(
+                .createCborMapper(
                     dataSerializer = request.responseSerializer,
                 )
                 .direct(responseBytes)

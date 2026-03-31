@@ -7,8 +7,5 @@ import kotlin.time.Duration.Companion.seconds
 
 object SyncConstants {
 
-    @OptIn(ExperimentalSerializationApi::class)
-    val cbor: Cbor = Cbor
-
     val tcpTimeout: Duration = 30.seconds
 }
