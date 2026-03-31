@@ -1,4 +1,4 @@
-package org.hnau.upchain.sync.core.utils
+package org.hnau.upchain.sync.tcp
 
 import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.ByteWriteChannel

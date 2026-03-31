@@ -8,8 +8,6 @@ kotlin {
         commonMain {
             dependencies {
                 api(project(":core"))
-                implementation(libs.ktor.io)
-                implementation(hnau.kotlinx.serialization.cbor)
             }
         }
     }

@@ -9,6 +9,7 @@ import io.ktor.server.request.receiveText
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
+import io.ktor.utils.io.CancellationException
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.serialization.ExperimentalSerializationApi
 import org.hnau.upchain.sync.core.ApiResponse
@@ -18,6 +19,7 @@ import org.hnau.upchain.sync.core.SyncHandle
 import org.hnau.upchain.sync.http.SyncConstantsHttp
 import org.hnau.upchain.sync.http.createJsonMapper
 import org.hnau.upchain.sync.http.defaultHttp
+import org.hnau.upchain.sync.http.encodeToJson
 
 private val logger = Logger.withTag("HttpSyncServer")
 
@@ -25,7 +27,6 @@ suspend fun httpSyncServer(
     api: SyncApi,
     port: ServerPort = ServerPort.defaultHttp,
 ): Result<Nothing> = runCatching {
-
     val server = embeddedServer(
         factory = CIO,
         port = port.port,
@@ -44,15 +45,22 @@ suspend fun httpSyncServer(
 private fun Application.configureServer(
     api: SyncApi,
 ) {
-
     routing {
         post("/") {
             val clientAddress = call.request.origin.remoteAddress
-            val request = call.receiveText()
-            logger.d { "Request from $clientAddress: $request" }
-            val response = api.handle(request)
-            logger.d { "Response to $clientAddress: $response" }
-            call.respondText(response)
+            try {
+                val request = call.receiveText()
+                logger.d { "Request from $clientAddress: $request" }
+                val response = api.handle(request)
+                logger.d { "Response to $clientAddress: $response" }
+                call.respondText(response)
+            } catch (ex: CancellationException) {
+                throw ex
+            } catch (th: Throwable) {
+                val response = ApiResponse.Error(th.message).encodeToJson()
+                logger.w(th) { "Error response to $clientAddress: $response" }
+                call.respondText(response)
+            }
         }
     }
 }

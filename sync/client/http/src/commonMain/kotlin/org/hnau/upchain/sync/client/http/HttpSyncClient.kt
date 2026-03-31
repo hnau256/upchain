@@ -3,7 +3,6 @@ package org.hnau.upchain.sync.client.http
 import arrow.core.flatMap
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
-import io.ktor.client.request.port
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
@@ -30,6 +29,8 @@ class HttpSyncClient(
     private val port: ServerPort = ServerPort.defaultHttp,
 ) : SyncApi {
 
+    private val url = "http://${address.address}:${port.port}/"
+
     private val client: HttpClient = HttpClient()
 
     init {
@@ -54,9 +55,8 @@ class HttpSyncClient(
         )
 
         val responseJson: String = client
-            .post(address.address) {
+            .post(url) {
                 contentType(ContentType.Application.Json)
-                port = this@HttpSyncClient.port.port
                 setBody(
                     TextContent(
                         text = requestJson,

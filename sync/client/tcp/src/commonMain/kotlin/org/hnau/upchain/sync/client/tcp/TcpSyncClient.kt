@@ -21,8 +21,8 @@ import org.hnau.upchain.sync.core.ServerPort
 import org.hnau.upchain.sync.core.SyncApi
 import org.hnau.upchain.sync.core.SyncHandle
 import org.hnau.upchain.sync.core.utils.SyncConstants
-import org.hnau.upchain.sync.core.utils.readSizeWithBytes
-import org.hnau.upchain.sync.core.utils.writeSizeWithBytes
+import org.hnau.upchain.sync.tcp.readSizeWithBytes
+import org.hnau.upchain.sync.tcp.writeSizeWithBytes
 import org.hnau.upchain.sync.tcp.SyncConstantsTcp
 import org.hnau.upchain.sync.tcp.createCborMapper
 import org.hnau.upchain.sync.tcp.defaultTcp

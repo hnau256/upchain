@@ -10,9 +10,9 @@ import org.hnau.upchain.sync.core.ApiResponse.Success
 fun <T> ApiResponse.Companion.createJsonMapper(
     dataSerializer: KSerializer<T>,
 ): Mapper<String, ApiResponse<T>> = Mapper(
-    direct = {
-        val head = it.first()
-        val tail = it.drop(1)
+    direct = { string ->
+        val head = string.first()
+        val tail = string.drop(1)
         when (head) {
             errorSign -> SyncConstantsHttp
                 .json
@@ -33,24 +33,31 @@ fun <T> ApiResponse.Companion.createJsonMapper(
         }
     },
     reverse = { response ->
-        val (head, tail) = when (response) {
-            is Success -> successSign to SyncConstantsHttp
-                .json
-                .encodeToString(
-                    serializer = dataSerializer,
-                    value = response.data,
-                )
+        when (response) {
+            is Success -> {
+                val tail = SyncConstantsHttp
+                    .json
+                    .encodeToString(
+                        serializer = dataSerializer,
+                        value = response.data,
+                    )
+                "$successSign$tail"
+            }
 
-            is Error -> errorSign to SyncConstantsHttp
-                .json
-                .encodeToString(
-                    serializer = String.serializer(),
-                    value = response.error.orEmpty(),
-                )
+            is Error -> response.encodeToJson()
         }
-        "$head$tail"
     }
 )
+
+fun Error.encodeToJson(): String {
+    val tail = SyncConstantsHttp
+        .json
+        .encodeToString(
+            serializer = String.serializer(),
+            value = error.orEmpty(),
+        )
+    return "$errorSign$tail"
+}
 
 private const val errorSign = '-'
 private const val successSign = '+'
