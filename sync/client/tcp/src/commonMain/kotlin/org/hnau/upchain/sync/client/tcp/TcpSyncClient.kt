@@ -16,6 +16,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.ExperimentalSerializationApi
 import org.hnau.upchain.sync.core.ApiResponse
+import org.hnau.upchain.sync.core.ServerAddress
 import org.hnau.upchain.sync.core.ServerPort
 import org.hnau.upchain.sync.core.SyncApi
 import org.hnau.upchain.sync.core.SyncHandle

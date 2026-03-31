@@ -18,6 +18,7 @@ import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.hnau.upchain.sync.core.ApiResponse
+import org.hnau.upchain.sync.core.ServerAddress
 import org.hnau.upchain.sync.core.ServerPort
 import org.hnau.upchain.sync.core.SyncApi
 import org.hnau.upchain.sync.core.SyncHandle
@@ -27,7 +28,7 @@ import org.hnau.upchain.sync.http.defaultHttp
 
 class HttpSyncClient(
     scope: CoroutineScope,
-    private val baseUrl: String,
+    private val address: ServerAddress,
     private val port: ServerPort = ServerPort.defaultHttp,
 ) : SyncApi {
 
@@ -59,7 +60,7 @@ class HttpSyncClient(
         )
 
         val responseJson: String = client
-            .post(baseUrl) {
+            .post(address.address) {
                 contentType(ContentType.Application.Json)
                 port = this@HttpSyncClient.port.port
                 setBody(
