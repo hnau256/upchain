@@ -11,7 +11,7 @@ Upchain is an immutable, append-only chain of updates where each link is cryptog
 - **Immutable Append-Only Chain**: Once added, updates cannot be modified or removed
 - **Cryptographic Linking**: Each update is hashed with the previous one using SHA-256
 - **Content Deduplication**: Duplicate updates are automatically detected and ignored
-- **Built-in Synchronization**: TCP-based sync protocol for multi-device data replication
+- **Built-in Synchronization**: HTTP and TCP sync protocols for multi-device data replication
 - **Kotlin Multiplatform**: Supports JVM and Linux X64 targets
 - **Coroutines-Based**: Built on Kotlin Coroutines with StateFlow for reactive updates
 - **Pluggable Storage**: File-based storage included, with support for custom mediators
@@ -218,14 +218,23 @@ class NetworkMediator(
 
 ## Synchronization Modules
 
-The `:sync` modules provide TCP-based synchronization between upchain instances over the network.
+The `:sync` modules provide synchronization between upchain instances over the network with support for multiple transport protocols.
 
 ### Module Structure
 
 ```
-:sync:core      - Shared sync protocol and API
-:sync:client    - Client-side synchronization
-:sync:server    - Server-side synchronization
+:sync:core                - Shared sync protocol and API
+
+:sync:tcp                 - TCP transport utilities (CBOR serialization, channel extensions)
+:sync:http                - HTTP transport utilities (JSON serialization, response mappers)
+
+:sync:server:core         - Server-side synchronization logic
+:sync:server:tcp          - TCP server implementation
+:sync:server:http         - HTTP server implementation
+
+:sync:client:core         - Client-side synchronization logic
+:sync:client:tcp          - TCP client implementation
+:sync:client:http         - HTTP client implementation
 ```
 
 ### Sync Protocol
@@ -235,7 +244,8 @@ The synchronization protocol uses a three-way sync algorithm:
 ```
 ┌─────────────┐                    ┌─────────────┐
 │   Client    │ ◄────────────────► │   Server    │
-│  (pull)     │   GetUpdates       │             │
+│  (pull)     │   GetUpchains      │             │
+│             │   GetUpdates       │             │
 │             │   AppendUpdates    │             │
 └─────────────┘                    └─────────────┘
 ```
@@ -266,43 +276,94 @@ After sync: A → B → D → C (merged)
 
 Both client and server end up with the merged chain containing all updates.
 
-### Client Usage
+### Transport Protocols
 
-```kotlin
-import org.hnau.upchain.sync.client.core.*
-import org.hnau.upchain.sync.core.ServerPort
+#### HTTP (Recommended)
 
-// Sync a repository with a remote server
-val result = repository.sync(
-    id = upchainId,
-    remoteAddress = ServerAddress("192.168.1.100"),
-    remotePort = ServerPort.default,  // port 26385
-)
+HTTP transport uses JSON over HTTP POST requests. Suitable for:
+- Internet-facing servers (works with reverse proxies like nginx)
+- Easy integration with TLS/HTTPS
+- Simple debugging with curl or browser tools
 
-result.onSuccess {
-    println("Sync completed successfully")
-}.onFailure { error ->
-    println("Sync failed: ${error.message}")
-}
-```
+**Default port**: 80 (can use any port)
 
-### Server Usage
-
+**Server:**
 ```kotlin
 import org.hnau.upchain.sync.server.core.*
 import org.hnau.upchain.sync.server.core.repository.*
+import org.hnau.upchain.sync.server.http.httpSyncServer
+import org.hnau.upchain.sync.core.ServerPort
+
+// Start HTTP sync server
+val result = httpSyncServer(
+    api = ServerSyncApi(scope, repository.toCreateOnly(scope)),
+    port = ServerPort(80),  // or ServerPort.defaultHttp
+)
+```
+
+**Client:**
+```kotlin
+import org.hnau.upchain.sync.client.core.sync
+import org.hnau.upchain.sync.client.http.HttpSyncClient
+import org.hnau.upchain.sync.core.ServerAddress
+import org.hnau.upchain.sync.core.ServerPort
+
+// Create HTTP client
+val api = HttpSyncClient(
+    scope = this,
+    address = ServerAddress("upchain.example.com"),
+    port = ServerPort(80),
+)
+
+// Sync a repository
+val result = repository.sync(
+    id = upchainId,
+    api = api,
+)
+```
+
+#### TCP
+
+TCP transport uses CBOR serialization over raw TCP sockets. Suitable for:
+- Local network synchronization
+- Low-latency scenarios
+- Binary efficiency
+
+**Default port**: 26385
+
+**Server:**
+```kotlin
+import org.hnau.upchain.sync.server.core.*
+import org.hnau.upchain.sync.server.core.repository.*
+import org.hnau.upchain.sync.server.tcp.tcpSyncServer
 import org.hnau.upchain.sync.core.ServerPort
 
 // Start TCP sync server
 val result = tcpSyncServer(
-    port = ServerPort.default,
-    repository = upchainsRepository.toCreateOnly(),
-    onThrowable = { error ->
-        println("Server error: ${error.message}")
-    }
+    api = ServerSyncApi(scope, repository.toCreateOnly(scope)),
+    port = ServerPort.default,  // port 26385
+)
+```
+
+**Client:**
+```kotlin
+import org.hnau.upchain.sync.client.core.sync
+import org.hnau.upchain.sync.client.tcp.TcpSyncClient
+import org.hnau.upchain.sync.core.ServerAddress
+import org.hnau.upchain.sync.core.ServerPort
+
+// Create TCP client
+val api = TcpSyncClient(
+    scope = this,
+    address = ServerAddress("192.168.1.100"),
+    port = ServerPort.default,  // port 26385
 )
 
-// Server runs indefinitely until cancelled
+// Sync a repository
+val result = repository.sync(
+    id = upchainId,
+    api = api,
+)
 ```
 
 ### Sync API
@@ -313,7 +374,7 @@ The sync protocol uses sealed class messages:
 - `GetMaxToMinUpdates` - Request updates in reverse order with pagination
 - `AppendUpdates` - Push updates to server (with hash validation)
 
-All messages are serialized using CBOR over TCP sockets.
+All messages are serialized using JSON (HTTP) or CBOR (TCP).
 
 ## Architecture
 
@@ -341,16 +402,32 @@ org.hnau.upchain.sync
 │   ├── SyncApi                # Sync API interface
 │   ├── SyncHandle             # Sealed protocol messages
 │   └── ServerPort             # Port configuration
+├── tcp                        # TCP transport utilities
+│   ├── SyncConstantsTcp       # CBOR serialization
+│   ├── ChannelExt             # Byte channel helpers
+│   └── ApiResponseExt         # Response serialization
+├── http                       # HTTP transport utilities
+│   ├── SyncConstantsHttp      # JSON serialization
+│   ├── ApiResponseExt         # Response mappers
+│   └── HttpScheme             # HTTP scheme enum
 ├── client
-│   ├── sync()                 # Extension for syncing repository
-│   ├── TcpSyncClient          # TCP client implementation
-│   ├── ServerUpdatesProvider  # Pull updates from server
-│   └── RemoteUpdatesSink      # Push updates to server
+│   ├── core
+│   │   ├── sync()             # Extension for syncing repository
+│   │   ├── ServerUpdatesProvider
+│   │   └── RemoteUpdatesSink
+│   ├── tcp
+│   │   └── TcpSyncClient      # TCP client implementation
+│   └── http
+│       └── HttpSyncClient     # HTTP client implementation
 └── server
-    ├── tcpSyncServer()        # Server entry point
-    ├── ServerSyncApi          # Request dispatcher
-    ├── UpchainSyncServer      # Single upchain handler
-    └── UpchainsSyncServer     # Multi-upchain handler
+    ├── core
+    │   ├── ServerSyncApi      # Request dispatcher
+    │   ├── UpchainSyncServer  # Single upchain handler
+    │   └── UpchainsSyncServer # Multi-upchain handler
+    ├── tcp
+    │   └── tcpSyncServer()    # TCP server entry point
+    └── http
+        └── httpSyncServer()   # HTTP server entry point
 ```
 
 ## Dependencies
@@ -359,7 +436,8 @@ org.hnau.upchain.sync
 - Kotlinx Coroutines 1.10.2
 - Kotlinx Serialization 1.10.0
 - Arrow Core 2.2.2 (for NonEmptyList)
-- Ktor Network 3.4.1 (for sync modules)
+- Ktor Network 3.4.1 (for TCP sync modules)
+- Ktor Server/Client 3.4.1 (for HTTP sync modules)
 
 ## License
 
