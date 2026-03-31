@@ -1,4 +1,4 @@
-package org.hnau.upchain.sync.client.core
+package org.hnau.upchain.sync.client.tcp
 
 import kotlinx.serialization.Serializable
 import kotlin.jvm.JvmInline

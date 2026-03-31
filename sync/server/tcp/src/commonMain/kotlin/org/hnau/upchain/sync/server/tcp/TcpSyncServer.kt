@@ -1,4 +1,4 @@
-package org.hnau.upchain.sync.server.core
+package org.hnau.upchain.sync.server.tcp
 
 import co.touchlab.kermit.Logger
 import io.ktor.network.selector.SelectorManager
@@ -11,7 +11,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.awaitCancellation
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -22,52 +21,44 @@ import org.hnau.upchain.sync.core.SyncHandle
 import org.hnau.upchain.sync.core.utils.SyncConstants
 import org.hnau.upchain.sync.core.utils.readSizeWithBytes
 import org.hnau.upchain.sync.core.utils.writeSizeWithBytes
-import org.hnau.upchain.sync.server.core.repository.UpchainsCreateOnlyRepository
-import org.hnau.upchain.sync.server.core.utils.ServerSyncApi
 import kotlin.time.Duration
 
 private val logger: Logger = Logger.withTag("TcpSyncServer")
 
 suspend fun tcpSyncServer(
-    repository: UpchainsCreateOnlyRepository,
+    api: SyncApi,
     port: ServerPort = ServerPort.default,
     tcpTimeout: Duration = SyncConstants.tcpTimeout,
-): Result<Nothing> = coroutineScope {
-    runCatching {
-        val api = ServerSyncApi(
-            scope = this@coroutineScope,
-            repository = repository,
-        )
-        val selectorManager = SelectorManager(Dispatchers.IO)
-        withContext(Dispatchers.IO) {
-            val serverSocket =
-                aSocket(selectorManager)
-                    .tcp()
-                    .bind(port = port.port)
-            try {
-                while (true) {
-                    try {
-                        circle(
-                            serverSocket = serverSocket,
-                            api = api,
-                            timeout = tcpTimeout,
-                        )
-                    } catch (ex: CancellationException) {
-                        throw ex
-                    } catch (th: Throwable) {
-                        logError(th) { "main circle" }
-                    }
-                }
-                awaitCancellation()
-            } finally {
+): Result<Nothing> = runCatching {
+    val selectorManager = SelectorManager(Dispatchers.IO)
+    withContext(Dispatchers.IO) {
+        val serverSocket =
+            aSocket(selectorManager)
+                .tcp()
+                .bind(port = port.port)
+        try {
+            while (true) {
                 try {
-                    serverSocket.close()
-                    selectorManager.close()
+                    circle(
+                        serverSocket = serverSocket,
+                        api = api,
+                        timeout = tcpTimeout,
+                    )
                 } catch (ex: CancellationException) {
                     throw ex
                 } catch (th: Throwable) {
-                    logError(th) { "stopping server" }
+                    logError(th) { "main circle" }
                 }
+            }
+            awaitCancellation()
+        } finally {
+            try {
+                serverSocket.close()
+                selectorManager.close()
+            } catch (ex: CancellationException) {
+                throw ex
+            } catch (th: Throwable) {
+                logError(th) { "stopping server" }
             }
         }
     }

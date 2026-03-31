@@ -10,20 +10,12 @@ import org.hnau.upchain.core.plus
 import org.hnau.upchain.core.repository.upchain.UpchainRepository
 import org.hnau.upchain.sync.client.core.utils.RemoteUpdatesSink
 import org.hnau.upchain.sync.client.core.utils.ServerUpdatesProvider
-import org.hnau.upchain.sync.client.core.utils.TcpSyncClient
-import org.hnau.upchain.sync.core.ServerPort
 import org.hnau.upchain.sync.core.SyncApi
 
 suspend fun UpchainRepository.sync(
     id: UpchainId,
-    remoteAddress: ServerAddress,
-    remotePort: ServerPort = ServerPort.default,
+    api: SyncApi,
 ): Result<Unit> = result {
-
-    val api: SyncApi = TcpSyncClient(
-        address = remoteAddress,
-        port = remotePort,
-    )
 
     var pushed = false
     while (!pushed) {

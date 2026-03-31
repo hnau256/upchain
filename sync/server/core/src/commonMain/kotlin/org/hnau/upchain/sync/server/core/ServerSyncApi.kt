@@ -1,11 +1,12 @@
-package org.hnau.upchain.sync.server.core.utils
+package org.hnau.upchain.sync.server.core
 
 import kotlinx.coroutines.CoroutineScope
 import org.hnau.upchain.sync.core.SyncApi
 import org.hnau.upchain.sync.core.SyncHandle
 import org.hnau.upchain.sync.server.core.repository.UpchainsCreateOnlyRepository
+import org.hnau.upchain.sync.server.core.utils.UpchainsSyncServer
 
-internal class ServerSyncApi(
+class ServerSyncApi(
     scope: CoroutineScope,
     repository: UpchainsCreateOnlyRepository,
 ) : SyncApi {
