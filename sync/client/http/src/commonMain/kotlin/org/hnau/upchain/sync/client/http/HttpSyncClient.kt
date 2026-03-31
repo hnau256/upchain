@@ -3,14 +3,12 @@ package org.hnau.upchain.sync.client.http
 import arrow.core.flatMap
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.port
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.content.TextContent
 import io.ktor.http.contentType
-import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -32,11 +30,7 @@ class HttpSyncClient(
     private val port: ServerPort = ServerPort.defaultHttp,
 ) : SyncApi {
 
-    private val client: HttpClient = HttpClient {
-        install(ContentNegotiation) {
-            json(SyncConstantsHttp.json)
-        }
-    }
+    private val client: HttpClient = HttpClient()
 
     init {
         scope.launch {

@@ -1,11 +1,10 @@
 package org.hnau.upchain.sync.server.http
 
-import io.ktor.serialization.kotlinx.json.json
+import co.touchlab.kermit.Logger
 import io.ktor.server.application.Application
-import io.ktor.server.application.install
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.embeddedServer
-import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.server.plugins.origin
 import io.ktor.server.request.receiveText
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.post
@@ -20,10 +19,13 @@ import org.hnau.upchain.sync.http.SyncConstantsHttp
 import org.hnau.upchain.sync.http.createJsonMapper
 import org.hnau.upchain.sync.http.defaultHttp
 
+private val logger = Logger.withTag("HttpSyncServer")
+
 suspend fun httpSyncServer(
     api: SyncApi,
     port: ServerPort = ServerPort.defaultHttp,
 ): Result<Nothing> = runCatching {
+
     val server = embeddedServer(
         factory = CIO,
         port = port.port,
@@ -43,14 +45,13 @@ private fun Application.configureServer(
     api: SyncApi,
 ) {
 
-    install(ContentNegotiation) {
-        json(SyncConstantsHttp.json)
-    }
-
     routing {
         post("/") {
+            val clientAddress = call.request.origin.remoteAddress
             val request = call.receiveText()
+            logger.d { "Request from $clientAddress: $request" }
             val response = api.handle(request)
+            logger.d { "Response to $clientAddress: $response" }
             call.respondText(response)
         }
     }

@@ -8,10 +8,8 @@ kotlin {
             dependencies {
                 api(project(":sync:client:core"))
                 api(project(":sync:http"))
-                implementation(libs.ktor.client.core)
                 implementation(libs.ktor.client.cio)
-                implementation(libs.ktor.client.content.negotiation)
-                implementation(libs.ktor.serialization.json)
+                implementation(hnau.kotlinx.serialization.json)
             }
         }
     }
