@@ -269,7 +269,7 @@ Both client and server end up with the merged chain containing all updates.
 ### Client Usage
 
 ```kotlin
-import org.hnau.upchain.sync.client.*
+import org.hnau.upchain.sync.client.core.*
 import org.hnau.upchain.sync.core.ServerPort
 
 // Sync a repository with a remote server
@@ -289,8 +289,8 @@ result.onSuccess {
 ### Server Usage
 
 ```kotlin
-import org.hnau.upchain.sync.server.*
-import org.hnau.upchain.sync.server.repository.*
+import org.hnau.upchain.sync.server.core.*
+import org.hnau.upchain.sync.server.core.repository.*
 import org.hnau.upchain.sync.core.ServerPort
 
 // Start TCP sync server
