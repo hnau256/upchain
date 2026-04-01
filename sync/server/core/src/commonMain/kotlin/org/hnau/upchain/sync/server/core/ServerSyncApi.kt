@@ -21,33 +21,12 @@ class ServerSyncApi(
         request: I,
     ): Result<O> = when (request) {
 
-        is SyncHandle.GetUpchains ->
-            getUpchains(request) as Result<O>
-
         is SyncHandle.GetMaxToMinUpdates ->
             getMaxToMinUpdates(request) as Result<O>
 
         is SyncHandle.AppendUpdates ->
             appendUpdates(request) as Result<O>
     }
-
-    private suspend fun getUpchains(
-        request: SyncHandle.GetUpchains,
-    ): Result<SyncHandle.GetUpchains.Response> = syncServer
-        .getUpchains(
-            clientsUpchains = request.clientsUpchains,
-        )
-        .map { upchains ->
-            SyncHandle.GetUpchains.Response(
-                upchains = upchains
-                    .map { upchain ->
-                        SyncHandle.GetUpchains.Response.Upchain(
-                            id = upchain.id,
-                            peekHash = upchain.peekHash,
-                        )
-                    }
-            )
-        }
 
     private suspend fun getMaxToMinUpdates(
         request: SyncHandle.GetMaxToMinUpdates,

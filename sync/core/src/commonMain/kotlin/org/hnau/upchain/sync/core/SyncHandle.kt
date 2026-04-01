@@ -4,7 +4,6 @@
 
 package org.hnau.upchain.sync.core
 
-import arrow.core.NonEmptySet
 import arrow.core.serialization.NonEmptySetSerializer
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
@@ -20,28 +19,6 @@ import org.hnau.upchain.core.Update
 sealed interface SyncHandle<O> {
 
     val responseSerializer: KSerializer<O>
-
-    @Serializable
-    @SerialName("get_upchains")
-    data class GetUpchains(
-        val clientsUpchains: NonEmptySet<UpchainId>,
-    ) : SyncHandle<GetUpchains.Response> {
-
-        override val responseSerializer: KSerializer<Response>
-            get() = Response.serializer()
-
-        @Serializable
-        data class Response(
-            val upchains: List<Upchain>,
-        ) {
-
-            @Serializable
-            data class Upchain(
-                val id: UpchainId,
-                val peekHash: UpchainHash?,
-            )
-        }
-    }
 
     @Serializable
     @SerialName("get_updates")

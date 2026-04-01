@@ -1,11 +1,7 @@
 package org.hnau.upchain.sync.server.core.utils
 
-import arrow.core.NonEmptySet
 import arrow.core.identity
-import arrow.core.raise.result
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.mapNotNull
@@ -38,33 +34,6 @@ class UpchainsSyncServer(
         .mapState(scope) { upchains ->
             upchains.associate(::identity)
         }
-
-
-    data class Upchain(
-        val id: UpchainId,
-        val peekHash: UpchainHash?,
-    )
-
-    suspend fun getUpchains(
-        clientsUpchains: NonEmptySet<UpchainId>,
-    ): Result<List<Upchain>> = result {
-        coroutineScope {
-            upchains.value.let { servers ->
-                servers
-                    .filter { it.key in clientsUpchains }
-                    .mapValues { (_, server) ->
-                        async { server.getUpchain() }
-                    }
-                    .map { (id, deferredUpchain) ->
-                        val upchain = deferredUpchain.await()
-                        Upchain(
-                            id = id,
-                            peekHash = upchain.peekHash,
-                        )
-                    }
-            }
-        }
-    }
 
     suspend fun getMaxToMinUpdates(
         upchainId: UpchainId,
