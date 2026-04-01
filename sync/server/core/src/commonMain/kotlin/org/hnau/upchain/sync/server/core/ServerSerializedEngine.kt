@@ -56,4 +56,6 @@ class ServerSerializedEngine<T>(
             )
             response to encodedResponse
         }
+
+    companion object
 }
