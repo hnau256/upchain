@@ -19,18 +19,17 @@ import org.hnau.upchain.sync.core.ServerPort
 import org.hnau.upchain.sync.core.SyncApi
 import org.hnau.upchain.sync.core.SyncHandle
 import org.hnau.upchain.sync.core.utils.SyncConstants
-import org.hnau.upchain.sync.tcp.readSizeWithBytes
-import org.hnau.upchain.sync.tcp.writeSizeWithBytes
 import org.hnau.upchain.sync.tcp.SyncConstantsTcp
 import org.hnau.upchain.sync.tcp.createCborMapper
 import org.hnau.upchain.sync.tcp.defaultTcp
+import org.hnau.upchain.sync.tcp.readSizeWithBytes
+import org.hnau.upchain.sync.tcp.writeSizeWithBytes
 import kotlin.time.Duration
 
 private val logger: Logger = Logger.withTag("TcpSyncServer")
 
 suspend fun tcpSyncServer(
     api: SyncApi,
-    port: ServerPort = ServerPort.defaultTcp,
     tcpTimeout: Duration = SyncConstants.tcpTimeout,
 ): Result<Nothing> = runCatching {
     val selectorManager = SelectorManager(Dispatchers.IO)
@@ -38,7 +37,7 @@ suspend fun tcpSyncServer(
         val serverSocket =
             aSocket(selectorManager)
                 .tcp()
-                .bind(port = port.port)
+                .bind(port = ServerPort.defaultTcp.port)
         try {
             while (true) {
                 try {

@@ -21,17 +21,16 @@ import org.hnau.upchain.sync.core.ServerPort
 import org.hnau.upchain.sync.core.SyncApi
 import org.hnau.upchain.sync.core.SyncHandle
 import org.hnau.upchain.sync.core.utils.SyncConstants
-import org.hnau.upchain.sync.tcp.readSizeWithBytes
-import org.hnau.upchain.sync.tcp.writeSizeWithBytes
 import org.hnau.upchain.sync.tcp.SyncConstantsTcp
 import org.hnau.upchain.sync.tcp.createCborMapper
 import org.hnau.upchain.sync.tcp.defaultTcp
+import org.hnau.upchain.sync.tcp.readSizeWithBytes
+import org.hnau.upchain.sync.tcp.writeSizeWithBytes
 import kotlin.time.Duration
 
 internal class TcpSyncClient(
     scope: CoroutineScope,
     private val address: ServerAddress,
-    private val port: ServerPort = ServerPort.defaultTcp,
     private val tcpTimeout: Duration = SyncConstants.tcpTimeout,
 ) : SyncApi {
 
@@ -64,7 +63,7 @@ internal class TcpSyncClient(
                         remoteAddress =
                             InetSocketAddress(
                                 hostname = address.address,
-                                port = port.port,
+                                port = ServerPort.defaultTcp.port,
                             ),
                         configure = {
                             // Ktor network doesn't have direct socketTimeout,
