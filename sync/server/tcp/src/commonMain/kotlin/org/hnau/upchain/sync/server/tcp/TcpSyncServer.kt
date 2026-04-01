@@ -13,14 +13,11 @@ import kotlinx.coroutines.IO
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.ExperimentalSerializationApi
-import org.hnau.upchain.sync.core.ApiResponse
 import org.hnau.upchain.sync.core.ServerPort
 import org.hnau.upchain.sync.core.SyncApi
-import org.hnau.upchain.sync.core.SyncHandle
 import org.hnau.upchain.sync.core.utils.SyncConstants
-import org.hnau.upchain.sync.tcp.SyncConstantsTcp
-import org.hnau.upchain.sync.tcp.createCborMapper
+import org.hnau.upchain.sync.server.core.ServerSerializedEngine
+import org.hnau.upchain.sync.tcp.CborTransportMapper
 import org.hnau.upchain.sync.tcp.defaultTcp
 import org.hnau.upchain.sync.tcp.readSizeWithBytes
 import org.hnau.upchain.sync.tcp.writeSizeWithBytes
@@ -33,7 +30,14 @@ suspend fun tcpSyncServer(
     tcpTimeout: Duration = SyncConstants.tcpTimeout,
     port: ServerPort = ServerPort.defaultTcp,
 ): Result<Nothing> = runCatching {
+
     val selectorManager = SelectorManager(Dispatchers.IO)
+
+    val serializedEngine: ServerSerializedEngine<ByteArray> = ServerSerializedEngine(
+        engine = engine,
+        transportMapper = CborTransportMapper,
+    )
+
     withContext(Dispatchers.IO) {
         val serverSocket =
             aSocket(selectorManager)
@@ -44,7 +48,7 @@ suspend fun tcpSyncServer(
                 try {
                     circle(
                         serverSocket = serverSocket,
-                        engine = engine,
+                        engine = serializedEngine,
                         timeout = tcpTimeout,
                     )
                 } catch (ex: CancellationException) {
@@ -69,57 +73,34 @@ suspend fun tcpSyncServer(
 
 private suspend fun CoroutineScope.circle(
     serverSocket: ServerSocket,
-    engine: SyncApi,
+    engine: ServerSerializedEngine<ByteArray>,
     timeout: Duration,
 ) {
     val clientSocket = serverSocket.accept()
     launch {
-        try {
-            clientSocket.use { clientSocket ->
-                val requestBytes = clientSocket
-                    .openReadChannel()
-                    .readSizeWithBytes(
-                        timeout = timeout,
-                    )
-                val responseBytes = engine.handle(requestBytes)
-                clientSocket
-                    .openWriteChannel()
-                    .writeSizeWithBytes(
-                        bytes = responseBytes,
-                        timeout = timeout,
-                    )
-            }
-        } catch (ex: CancellationException) {
-            throw ex
-        } catch (th: Throwable) {
-            logError(th) { "handling client from ${clientSocket.localAddress}" }
+        clientSocket.use { clientSocket ->
+            engine.handle(
+                clientAddress = clientSocket.localAddress.toString(),
+                readRequest = {
+                    clientSocket
+                        .openReadChannel()
+                        .readSizeWithBytes(
+                            timeout = timeout,
+                        )
+                },
+                writeResponse = { response ->
+                    clientSocket
+                        .openWriteChannel()
+                        .writeSizeWithBytes(
+                            bytes = response,
+                            timeout = timeout,
+                        )
+                }
+            )
+
         }
     }
 }
-
-@OptIn(ExperimentalSerializationApi::class)
-private suspend fun SyncApi.handle(
-    request: ByteArray,
-): ByteArray {
-    val typedRequest = SyncConstantsTcp.cbor.decodeFromByteArray(
-        SyncHandle.serializer,
-        request,
-    )
-    return handleTyped(typedRequest)
-}
-
-private suspend fun <O, I : SyncHandle<O>> SyncApi.handleTyped(
-    request: I,
-): ByteArray = handle(request)
-    .fold(
-        onSuccess = { result -> ApiResponse.Success(result) },
-        onFailure = { error -> ApiResponse.Error(error.message) },
-    )
-    .let { response ->
-        ApiResponse
-            .createCborMapper(request.responseSerializer)
-            .reverse(response)
-    }
 
 private inline fun logError(
     error: Throwable,
