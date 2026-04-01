@@ -3,6 +3,7 @@ package org.hnau.upchain.sync.core
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
+@Serializable
 sealed interface ApiResponse<out T> {
 
     @Serializable

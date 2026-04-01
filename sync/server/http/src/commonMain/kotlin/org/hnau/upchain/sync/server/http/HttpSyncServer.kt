@@ -13,22 +13,23 @@ import io.ktor.utils.io.CancellationException
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.serialization.ExperimentalSerializationApi
 import org.hnau.upchain.sync.core.ApiResponse
+import org.hnau.upchain.sync.core.ServerPort
 import org.hnau.upchain.sync.core.SyncApi
 import org.hnau.upchain.sync.core.SyncHandle
 import org.hnau.upchain.sync.http.HttpScheme
 import org.hnau.upchain.sync.http.SyncConstantsHttp
-import org.hnau.upchain.sync.http.createJsonMapper
 import org.hnau.upchain.sync.http.encodeToJson
 
 private val logger = Logger.withTag("HttpSyncServer")
 
 suspend fun httpSyncServer(
     api: SyncApi,
+    port: ServerPort = HttpScheme.Http.port,
 ): Result<Nothing> = runCatching {
 
     val server = embeddedServer(
         factory = CIO,
-        port = HttpScheme.Http.port.port,
+        port = port.port,
     ) {
         configureServer(api)
     }
@@ -83,7 +84,8 @@ private suspend fun <O, I : SyncHandle<O>> SyncApi.handleTyped(
         onFailure = { error -> ApiResponse.Error(error.message) },
     )
     .let { response ->
-        ApiResponse
-            .createJsonMapper(request.responseSerializer)
-            .reverse(response)
+        SyncConstantsHttp.json.encodeToString(
+            serializer = ApiResponse.serializer(request.responseSerializer),
+            value = response,
+        )
     }

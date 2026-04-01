@@ -31,13 +31,14 @@ private val logger: Logger = Logger.withTag("TcpSyncServer")
 suspend fun tcpSyncServer(
     api: SyncApi,
     tcpTimeout: Duration = SyncConstants.tcpTimeout,
+    port: ServerPort = ServerPort.defaultTcp,
 ): Result<Nothing> = runCatching {
     val selectorManager = SelectorManager(Dispatchers.IO)
     withContext(Dispatchers.IO) {
         val serverSocket =
             aSocket(selectorManager)
                 .tcp()
-                .bind(port = ServerPort.defaultTcp.port)
+                .bind(port = port.port)
         try {
             while (true) {
                 try {

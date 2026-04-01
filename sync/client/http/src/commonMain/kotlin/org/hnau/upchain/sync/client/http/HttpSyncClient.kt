@@ -16,16 +16,17 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.hnau.upchain.sync.core.ApiResponse
 import org.hnau.upchain.sync.core.ServerAddress
+import org.hnau.upchain.sync.core.ServerPort
 import org.hnau.upchain.sync.core.SyncApi
 import org.hnau.upchain.sync.core.SyncHandle
 import org.hnau.upchain.sync.http.HttpScheme
 import org.hnau.upchain.sync.http.SyncConstantsHttp
-import org.hnau.upchain.sync.http.createJsonMapper
 
 class HttpSyncClient(
     scope: CoroutineScope,
     private val address: ServerAddress,
     scheme: HttpScheme = HttpScheme.default,
+    port: ServerPort = scheme.port,
 ) : SyncApi {
 
     private val url = run {
@@ -33,7 +34,7 @@ class HttpSyncClient(
             HttpScheme.Http -> "http"
             HttpScheme.Https -> "https"
         }
-        "$schemeString://${address.address}:${scheme.port.port}${SyncConstantsHttp.route}"
+        "$schemeString://${address.address}:${port.port}${SyncConstantsHttp.route}"
     }
 
     private val client: HttpClient = HttpClient()
@@ -72,11 +73,12 @@ class HttpSyncClient(
             .body()
 
         val response = withContext(Dispatchers.Default) {
-            ApiResponse
-                .createJsonMapper(
-                    dataSerializer = request.responseSerializer,
+            SyncConstantsHttp
+                .json
+                .decodeFromString(
+                    deserializer = ApiResponse.serializer(request.responseSerializer),
+                    string = responseJson
                 )
-                .direct(responseJson)
         }
         response
     }.flatMap { response ->

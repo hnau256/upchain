@@ -32,6 +32,7 @@ internal class TcpSyncClient(
     scope: CoroutineScope,
     private val address: ServerAddress,
     private val tcpTimeout: Duration = SyncConstants.tcpTimeout,
+    private val port: ServerPort = ServerPort.defaultTcp,
 ) : SyncApi {
 
     private val selectorManager = SelectorManager(Dispatchers.IO)
@@ -63,7 +64,7 @@ internal class TcpSyncClient(
                         remoteAddress =
                             InetSocketAddress(
                                 hostname = address.address,
-                                port = ServerPort.defaultTcp.port,
+                                port = port.port,
                             ),
                         configure = {
                             // Ktor network doesn't have direct socketTimeout,
