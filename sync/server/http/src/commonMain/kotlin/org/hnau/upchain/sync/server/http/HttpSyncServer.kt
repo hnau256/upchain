@@ -23,7 +23,7 @@ import org.hnau.upchain.sync.http.encodeToJson
 private val logger = Logger.withTag("HttpSyncServer")
 
 suspend fun httpSyncServer(
-    api: SyncApi,
+    engine: SyncApi,
     port: ServerPort = HttpScheme.Http.port,
 ): Result<Nothing> = runCatching {
 
@@ -31,7 +31,7 @@ suspend fun httpSyncServer(
         factory = CIO,
         port = port.port,
     ) {
-        configureServer(api)
+        configureServer(engine)
     }
 
     try {
@@ -43,7 +43,7 @@ suspend fun httpSyncServer(
 }
 
 private fun Application.configureServer(
-    api: SyncApi,
+    engine: SyncApi,
 ) {
     routing {
         post(SyncConstantsHttp.route) {
@@ -51,7 +51,7 @@ private fun Application.configureServer(
             try {
                 val request = call.receiveText()
                 logger.d { "Request from $clientAddress: $request" }
-                val response = api.handle(request)
+                val response = engine.handle(request)
                 logger.d { "Response to $clientAddress: $response" }
                 call.respondText(response)
             } catch (ex: CancellationException) {

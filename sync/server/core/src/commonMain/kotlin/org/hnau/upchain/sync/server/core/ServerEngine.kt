@@ -6,7 +6,7 @@ import org.hnau.upchain.sync.core.SyncHandle
 import org.hnau.upchain.sync.server.core.repository.UpchainsCreateOnlyRepository
 import org.hnau.upchain.sync.server.core.utils.UpchainsSyncServer
 
-class ServerSyncApi(
+class ServerEngine(
     scope: CoroutineScope,
     repository: UpchainsCreateOnlyRepository,
 ) : SyncApi {

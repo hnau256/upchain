@@ -29,7 +29,7 @@ import kotlin.time.Duration
 private val logger: Logger = Logger.withTag("TcpSyncServer")
 
 suspend fun tcpSyncServer(
-    api: SyncApi,
+    engine: SyncApi,
     tcpTimeout: Duration = SyncConstants.tcpTimeout,
     port: ServerPort = ServerPort.defaultTcp,
 ): Result<Nothing> = runCatching {
@@ -44,7 +44,7 @@ suspend fun tcpSyncServer(
                 try {
                     circle(
                         serverSocket = serverSocket,
-                        api = api,
+                        engine = engine,
                         timeout = tcpTimeout,
                     )
                 } catch (ex: CancellationException) {
@@ -69,7 +69,7 @@ suspend fun tcpSyncServer(
 
 private suspend fun CoroutineScope.circle(
     serverSocket: ServerSocket,
-    api: SyncApi,
+    engine: SyncApi,
     timeout: Duration,
 ) {
     val clientSocket = serverSocket.accept()
@@ -81,7 +81,7 @@ private suspend fun CoroutineScope.circle(
                     .readSizeWithBytes(
                         timeout = timeout,
                     )
-                val responseBytes = api.handle(requestBytes)
+                val responseBytes = engine.handle(requestBytes)
                 clientSocket
                     .openWriteChannel()
                     .writeSizeWithBytes(
