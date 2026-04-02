@@ -8,6 +8,7 @@ kotlin {
         commonMain {
             dependencies {
                 api(project(":core"))
+                implementation(libs.ktor.http)
             }
         }
     }

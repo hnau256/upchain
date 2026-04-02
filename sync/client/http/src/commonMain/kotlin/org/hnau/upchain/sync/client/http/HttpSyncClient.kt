@@ -11,7 +11,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.launch
 import org.hnau.upchain.sync.client.core.ClientSerializedEngine
-import org.hnau.upchain.sync.core.ServerAddress
+import org.hnau.upchain.sync.core.ServerHost
 import org.hnau.upchain.sync.core.ServerPort
 import org.hnau.upchain.sync.core.SyncApi
 import org.hnau.upchain.sync.core.SyncHandle
@@ -21,7 +21,7 @@ import org.hnau.upchain.sync.http.SyncConstantsHttp
 
 class HttpSyncClient(
     scope: CoroutineScope,
-    private val address: ServerAddress,
+    private val host: ServerHost,
     scheme: HttpScheme = HttpScheme.default,
     port: ServerPort = scheme.port,
 ) : SyncApi {
@@ -35,7 +35,7 @@ class HttpSyncClient(
                 HttpScheme.Http -> "http"
                 HttpScheme.Https -> "https"
             }
-            "$schemeString://${address.address}:${port.port}${SyncConstantsHttp.route}"
+            "$schemeString://${host.host}:${port.port}${SyncConstantsHttp.route}"
         }
 
         ClientSerializedEngine(

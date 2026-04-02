@@ -13,7 +13,7 @@ import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.launch
 import kotlinx.serialization.ExperimentalSerializationApi
 import org.hnau.upchain.sync.client.core.ClientSerializedEngine
-import org.hnau.upchain.sync.core.ServerAddress
+import org.hnau.upchain.sync.core.ServerHost
 import org.hnau.upchain.sync.core.ServerPort
 import org.hnau.upchain.sync.core.SyncApi
 import org.hnau.upchain.sync.core.SyncHandle
@@ -26,7 +26,7 @@ import kotlin.time.Duration
 
 internal class TcpSyncClient(
     scope: CoroutineScope,
-    private val address: ServerAddress,
+    private val host: ServerHost,
     private val tcpTimeout: Duration = SyncConstants.tcpTimeout,
     private val port: ServerPort = ServerPort.defaultTcp,
 ) : SyncApi {
@@ -38,14 +38,14 @@ internal class TcpSyncClient(
         val socketBuilder = aSocket(selectorManager).tcp()
 
         ClientSerializedEngine(
-            serverAddress = address.address,
+            serverAddress = "${host.host}:${port.port}",
             transportMapper = CborTransportMapper,
         ) { request ->
 
             socketBuilder
                 .connect(
                     remoteAddress = InetSocketAddress(
-                        hostname = address.address,
+                        hostname = host.host,
                         port = port.port,
                     ),
                 )

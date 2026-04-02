@@ -15,7 +15,7 @@ plugins {
 
 hnau {
     publish {
-        version = "1.4.0"
+        version = "1.5.0"
         gitUrl = "https://github.com/hnau256/upchain"
     }
 }
