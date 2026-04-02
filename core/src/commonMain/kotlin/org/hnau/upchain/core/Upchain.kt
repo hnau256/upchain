@@ -32,7 +32,7 @@ class Upchain private constructor(
         )
         val itemHash = item.contentHash
         if (itemHash in contentHashes) {
-            return this
+            //return this TODO
         }
         return Upchain(
             items = items + item,

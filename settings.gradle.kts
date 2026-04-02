@@ -10,14 +10,12 @@ pluginManagement {
 }
 
 plugins {
-    id("org.hnau.plugin.settings") version "1.9.0"
+    id("org.hnau.plugin.settings") version "1.11.1"
 }
 
 hnau {
-    groupId = "org.hnau.upchain"
-
     publish {
-        version = "1.3.0"
+        version = "1.4.0"
         gitUrl = "https://github.com/hnau256/upchain"
     }
 }
