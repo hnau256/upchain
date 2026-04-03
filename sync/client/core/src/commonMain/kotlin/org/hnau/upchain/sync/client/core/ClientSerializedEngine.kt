@@ -5,12 +5,12 @@ import org.hnau.commons.gen.loggable.annotations.Loggable
 import org.hnau.upchain.sync.core.ApiResponse
 import org.hnau.upchain.sync.core.SyncApi
 import org.hnau.upchain.sync.core.SyncHandle
-import org.hnau.upchain.sync.core.TransportMapper
+import org.hnau.upchain.sync.core.TransportMapperFactory
 
 @Loggable
 class ClientSerializedEngine<T>(
     private val serverAddress: String,
-    private val transportMapper: TransportMapper<T>,
+    private val transportMapperFactory: TransportMapperFactory<T>,
     private val doRequest: suspend (T) -> T,
 ) : SyncApi {
 
@@ -20,17 +20,19 @@ class ClientSerializedEngine<T>(
 
         logger.d { "Request to $serverAddress: $request" }
 
-        val encodedRequest: T = transportMapper.encode(
-            output = request,
-            serializer = SyncHandle.serializer,
-        )
+        val encodedRequest: T = transportMapperFactory
+            .createTransportMapper(
+                serializer = SyncHandle.serializer,
+            )
+            .reverse(request)
 
         val encodedResponse = doRequest(encodedRequest)
 
-        val response = transportMapper.decode(
-            transport = encodedResponse,
-            serializer = ApiResponse.serializer(request.responseSerializer),
-        )
+        val response = transportMapperFactory
+            .createTransportMapper(
+                serializer = ApiResponse.serializer(request.responseSerializer),
+            )
+            .direct(encodedResponse)
 
         logger.d { "Response from $serverAddress: $response" }
 

@@ -5,13 +5,13 @@ import org.hnau.commons.gen.loggable.annotations.Loggable
 import org.hnau.upchain.sync.core.ApiResponse
 import org.hnau.upchain.sync.core.SyncApi
 import org.hnau.upchain.sync.core.SyncHandle
-import org.hnau.upchain.sync.core.TransportMapper
+import org.hnau.upchain.sync.core.TransportMapperFactory
 
 
 @Loggable
 class ServerSerializedEngine<T>(
     private val engine: SyncApi,
-    private val transportMapper: TransportMapper<T>,
+    private val transportMapperFactory: TransportMapperFactory<T>,
 ) {
 
     suspend fun handle(
@@ -21,10 +21,11 @@ class ServerSerializedEngine<T>(
     ) {
         try {
             val encodedRequest = readRequest()
-            val request = transportMapper.decode(
-                transport = encodedRequest,
-                serializer = SyncHandle.serializer,
-            )
+            val request = transportMapperFactory
+                .createTransportMapper(
+                    serializer = SyncHandle.serializer,
+                )
+                .direct(encodedRequest)
             logger.d { "Request from $clientAddress: $request" }
             val (response, encodedResponse) = handleTyped(request)
             writeResponse(encodedResponse)
@@ -34,10 +35,11 @@ class ServerSerializedEngine<T>(
         } catch (th: Throwable) {
             val response = ApiResponse.Error(th.message)
             logger.w(th) { "Error response to $clientAddress: $response" }
-            transportMapper.encode(
-                output = response,
-                serializer = ApiResponse.Error.serializer(),
-            )
+            transportMapperFactory
+                .createTransportMapper(
+                    serializer = ApiResponse.Error.serializer(),
+                )
+                .reverse(response)
         }
     }
 
@@ -50,10 +52,11 @@ class ServerSerializedEngine<T>(
             onFailure = { error -> ApiResponse.Error(error.message) },
         )
         .let { response ->
-            val encodedResponse = transportMapper.encode(
-                output = response,
-                serializer = ApiResponse.serializer(request.responseSerializer),
-            )
+            val encodedResponse = transportMapperFactory
+                .createTransportMapper(
+                    serializer = ApiResponse.serializer(request.responseSerializer),
+                )
+                .reverse(response)
             response to encodedResponse
         }
 

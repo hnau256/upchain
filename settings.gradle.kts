@@ -10,7 +10,7 @@ pluginManagement {
 }
 
 plugins {
-    id("org.hnau.plugin.settings") version "1.11.1"
+    id("org.hnau.plugin.settings") version "1.11.2"
 }
 
 hnau {

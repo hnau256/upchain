@@ -16,7 +16,7 @@ import org.hnau.upchain.sync.core.ServerPort
 import org.hnau.upchain.sync.core.SyncApi
 import org.hnau.upchain.sync.core.SyncHandle
 import org.hnau.upchain.sync.http.HttpScheme
-import org.hnau.upchain.sync.http.JsonTransportMapper
+import org.hnau.upchain.sync.http.JsonTransportMapperFactory
 import org.hnau.upchain.sync.http.SyncConstantsHttp
 
 class HttpSyncClient(
@@ -40,7 +40,7 @@ class HttpSyncClient(
 
         ClientSerializedEngine(
             serverAddress = url,
-            transportMapper = JsonTransportMapper,
+            transportMapperFactory = JsonTransportMapperFactory,
         ) { request ->
             client
                 .post(url) {

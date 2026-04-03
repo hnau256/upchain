@@ -11,7 +11,7 @@ import kotlinx.coroutines.awaitCancellation
 import org.hnau.upchain.sync.core.ServerPort
 import org.hnau.upchain.sync.core.SyncApi
 import org.hnau.upchain.sync.http.HttpScheme
-import org.hnau.upchain.sync.http.JsonTransportMapper
+import org.hnau.upchain.sync.http.JsonTransportMapperFactory
 import org.hnau.upchain.sync.http.SyncConstantsHttp
 import org.hnau.upchain.sync.server.core.ServerSerializedEngine
 
@@ -22,7 +22,7 @@ suspend fun httpSyncServer(
 
     val serializedEngine: ServerSerializedEngine<String> = ServerSerializedEngine(
         engine = engine,
-        transportMapper = JsonTransportMapper,
+        transportMapperFactory = JsonTransportMapperFactory,
     )
 
     val server = embeddedServer(

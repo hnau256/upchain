@@ -18,7 +18,7 @@ import org.hnau.upchain.sync.core.ServerPort
 import org.hnau.upchain.sync.core.SyncApi
 import org.hnau.upchain.sync.core.SyncHandle
 import org.hnau.upchain.sync.core.utils.SyncConstants
-import org.hnau.upchain.sync.tcp.CborTransportMapper
+import org.hnau.upchain.sync.tcp.CborTransportMapperFactory
 import org.hnau.upchain.sync.tcp.defaultTcp
 import org.hnau.upchain.sync.tcp.readSizeWithBytes
 import org.hnau.upchain.sync.tcp.writeSizeWithBytes
@@ -39,7 +39,7 @@ internal class TcpSyncClient(
 
         ClientSerializedEngine(
             serverAddress = "${host.host}:${port.port}",
-            transportMapper = CborTransportMapper,
+            transportMapperFactory = CborTransportMapperFactory,
         ) { request ->
 
             socketBuilder
