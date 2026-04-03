@@ -10,6 +10,7 @@ import kotlin.io.path.createDirectories
 import kotlin.io.path.exists
 import kotlin.io.path.nameWithoutExtension
 
+//TODO extract logic to commonMain
 internal actual fun FileAccessor.Companion.create(filename: String): FileAccessor =
     FileAccessorImpl(
         path = Path.of(filename),
