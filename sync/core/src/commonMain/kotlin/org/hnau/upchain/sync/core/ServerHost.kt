@@ -24,7 +24,7 @@ value class ServerHost private constructor(
         private fun isCorrectHost(
             input: String,
         ): Boolean = try {
-            Url("http://$this").run {
+            Url("http://$input").run {
                 host.isNotEmpty() &&
                         encodedPath.isEmpty() &&
                         specifiedPort == DEFAULT_PORT &&
