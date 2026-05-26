@@ -1,6 +1,7 @@
 package org.hnau.upchain.sync.client.core.utils
 
 import arrow.core.raise.result
+import org.hnau.commons.gen.loggable.annotations.Loggable
 import org.hnau.commons.kotlin.ifTrue
 import org.hnau.upchain.core.Upchain
 import org.hnau.upchain.core.UpchainHash
@@ -9,6 +10,7 @@ import org.hnau.upchain.core.Update
 import org.hnau.upchain.sync.core.SyncApi
 import org.hnau.upchain.sync.core.SyncHandle
 
+@Loggable
 internal class RemoteUpdatesSink(
     private val id: UpchainId,
     private val api: SyncApi,
@@ -31,7 +33,10 @@ internal class RemoteUpdatesSink(
     }
 
     suspend fun flush(): Result<Boolean> = result {
-        if (buffer.isEmpty()) return@result true
+        if (buffer.isEmpty()) {
+            logger.v { "No need to push: no updates" }
+            return@result true
+        }
 
         val pushed = api
             .handle(
@@ -44,8 +49,14 @@ internal class RemoteUpdatesSink(
             .bind()
             .let { response ->
                 when (response) {
-                    SyncHandle.AppendUpdates.Response.Success -> true
-                    SyncHandle.AppendUpdates.Response.ServerAhead -> false
+                    SyncHandle.AppendUpdates.Response.Success -> {
+                        logger.v { "Updates was pushed" }
+                        true
+                    }
+                    SyncHandle.AppendUpdates.Response.ServerAhead -> {
+                        logger.w { "Updates was not pushed: server ahead" }
+                        false
+                    }
                 }
             }
 
