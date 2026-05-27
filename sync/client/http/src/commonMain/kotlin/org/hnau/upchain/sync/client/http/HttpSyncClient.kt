@@ -6,10 +6,8 @@ import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.content.TextContent
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.awaitCancellation
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.job
 import org.hnau.upchain.sync.client.core.ClientSerializedEngine
 import org.hnau.upchain.sync.core.ServerHost
 import org.hnau.upchain.sync.core.ServerPort
@@ -56,14 +54,10 @@ class HttpSyncClient(
     }
 
     init {
-        scope.launch {
-            try {
-                awaitCancellation()
-            } catch (ex: CancellationException) {
-                client.close()
-                throw ex
-            }
-        }
+        scope
+            .coroutineContext
+            .job
+            .invokeOnCompletion { client.close() }
     }
 
     @Suppress("UNCHECKED_CAST")

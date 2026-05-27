@@ -5,12 +5,10 @@ import io.ktor.network.sockets.InetSocketAddress
 import io.ktor.network.sockets.aSocket
 import io.ktor.network.sockets.openReadChannel
 import io.ktor.network.sockets.openWriteChannel
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
-import kotlinx.coroutines.awaitCancellation
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.job
 import kotlinx.serialization.ExperimentalSerializationApi
 import org.hnau.upchain.sync.client.core.ClientSerializedEngine
 import org.hnau.upchain.sync.core.ServerHost
@@ -67,14 +65,10 @@ internal class TcpSyncClient(
     }
 
     init {
-        scope.launch {
-            try {
-                awaitCancellation()
-            } catch (ex: CancellationException) {
-                selectorManager.close()
-                throw ex
-            }
-        }
+        scope
+            .coroutineContext
+            .job
+            .invokeOnCompletion { selectorManager.close() }
     }
 
     @OptIn(ExperimentalSerializationApi::class)
