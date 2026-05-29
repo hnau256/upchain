@@ -1,6 +1,8 @@
 package org.hnau.upchain.core.repository.file.upchain
 
 import arrow.core.NonEmptyList
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.hnau.commons.kotlin.ifNull
 import java.nio.file.Files
 import java.nio.file.Path
@@ -11,59 +13,63 @@ import kotlin.io.path.exists
 import kotlin.io.path.nameWithoutExtension
 
 //TODO extract logic to commonMain
-internal actual fun FileAccessor.Companion.create(filename: String): FileAccessor =
-    FileAccessorImpl(
-        path = Path.of(filename),
-    )
+internal actual fun FileAccessor.Companion.create(
+    filename: String,
+): FileAccessor = FileAccessorImpl(
+    path = Path.of(filename),
+)
 
 private class FileAccessorImpl(
     private val path: Path,
 ) : FileAccessor {
 
-    override suspend fun readLines(): Iterable<String> {
+    override suspend fun readLines(): Iterable<String> =
+        withContext(Dispatchers.IO) {
 
-        val text = path
-            .takeIf(Path::exists)
-            ?.let(Files::readAllBytes)
-            .ifNull { byteArrayOf() }
-            .decodeToString()
+            val text = path
+                .takeIf(Path::exists)
+                ?.let(Files::readAllBytes)
+                .ifNull { byteArrayOf() }
+                .decodeToString()
 
-        val lines = mutableListOf<String>()
-        var index = 0
-        while (index < text.length) {
-            val nextNewline = text.indexOf('\n', index)
-            if (nextNewline == -1) break
-            val line = text.substring(index, nextNewline)
-            if (line.isNotEmpty()) {
-                lines.add(line)
+            val lines = mutableListOf<String>()
+            var index = 0
+            while (index < text.length) {
+                val nextNewline = text.indexOf('\n', index)
+                if (nextNewline == -1) break
+                val line = text.substring(index, nextNewline)
+                if (line.isNotEmpty()) {
+                    lines.add(line)
+                }
+                index = nextNewline + 1
             }
-            index = nextNewline + 1
-        }
 
-        if (index != text.length) {
-            writeAtomically(lines)
-        }
+            if (index != text.length) {
+                writeAtomically(lines)
+            }
 
-        return lines
-    }
+            lines
+        }
 
     override suspend fun appendLines(
         lines: NonEmptyList<String>,
     ) {
-        Files.write(
-            path,
-            lines
-                .map { "$it\n" }
-                .joinToString(separator = "")
-                .encodeToByteArray(),
-            StandardOpenOption.APPEND,
-            StandardOpenOption.CREATE,
-        )
+        withContext(Dispatchers.IO) {
+            Files.write(
+                path,
+                lines
+                    .map { "$it\n" }
+                    .joinToString(separator = "")
+                    .encodeToByteArray(),
+                StandardOpenOption.APPEND,
+                StandardOpenOption.CREATE,
+            )
+        }
     }
 
     override suspend fun replaceLines(
         lines: List<String>,
-    ) {
+    ) = withContext(Dispatchers.IO) {
         writeAtomically(lines)
     }
 
