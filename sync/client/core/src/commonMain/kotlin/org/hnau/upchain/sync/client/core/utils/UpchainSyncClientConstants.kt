@@ -2,5 +2,5 @@ package org.hnau.upchain.sync.client.core.utils
 
 internal data object UpchainSyncClientConstants {
 
-    const val updatesToSendPortionSize = 128
+    const val updatesToSendPortionSize = 64
 }
