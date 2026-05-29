@@ -1,1 +1,1 @@
-../../../gradlew :sync:client:app:run --args="-f upchains/ae9766db-8c04-439d-b67f-65c9eed2de0d -s upchain.hnau.org -tls"
+../../../gradlew :sync:client:app:run --args="-f upchains/ae9766db-8c04-439d-b67f-65c9eed2de0d -s 127.0.0.1"

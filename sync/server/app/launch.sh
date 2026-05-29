@@ -1,0 +1,1 @@
+../../../gradlew :sync:server:app:run --args="-d upchains"

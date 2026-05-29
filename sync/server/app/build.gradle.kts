@@ -5,9 +5,9 @@ plugins {
 
 dependencies {
     implementation(libs.kotlinx.cli)
-    implementation(project(":sync:client:http"))
+    implementation(project(":sync:server:http"))
 }
 
 application {
-    mainClass = "org.hnau.upchain.sync.client.app.MainKt"
+    mainClass = "org.hnau.upchain.sync.server.app.MainKt"
 }
