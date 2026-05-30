@@ -15,6 +15,7 @@ internal class RemoteUpdatesSink(
     private val id: UpchainId,
     private val api: SyncApi,
     initialServerPeekHash: UpchainHash?,
+    private val onUpdatesToServer: (updatesCount: Int) -> Unit,
 ) {
     private var serverPeekBeforeBuffer: UpchainHash? = initialServerPeekHash
 
@@ -53,6 +54,7 @@ internal class RemoteUpdatesSink(
                         logger.v { "Updates was pushed" }
                         true
                     }
+
                     SyncHandle.AppendUpdates.Response.ServerAhead -> {
                         logger.w { "Updates was not pushed: server ahead" }
                         false
@@ -60,7 +62,10 @@ internal class RemoteUpdatesSink(
                 }
             }
 
-        pushed.ifTrue { buffer.clear() }
+        pushed.ifTrue {
+            onUpdatesToServer(buffer.size)
+            buffer.clear()
+        }
 
         pushed
     }

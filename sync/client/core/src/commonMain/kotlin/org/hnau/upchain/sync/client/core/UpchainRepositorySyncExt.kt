@@ -16,6 +16,7 @@ import org.hnau.upchain.sync.core.SyncApi
 suspend fun UpchainRepository.sync(
     id: UpchainId,
     api: SyncApi,
+    listener: SyncListener,
 ): Result<Unit> = result {
     val logger = Logger.withTag("UpchainRepositorySyncExt.sync")
 
@@ -26,6 +27,8 @@ suspend fun UpchainRepository.sync(
         val serverPeekHash = pull(
             id = id,
             api = api,
+            onUpdatesFromServers = listener.onUpdatesFromServers,
+            onApplyServerUpdates = listener.onApplyServerUpdates,
         ).bind()
         logger.v { "Pulled updates from server. Peek hash: $serverPeekHash. Pushing updates to server" }
 
@@ -33,6 +36,7 @@ suspend fun UpchainRepository.sync(
             id = id,
             api = api,
             serverPeekHash = serverPeekHash,
+            onUpdatesToServer = listener.onUpdatesToServer,
         ).bind()
         logger.v { "Pushed updates to server. Success: $pushed" }
     }
@@ -42,12 +46,15 @@ suspend fun UpchainRepository.sync(
 private suspend fun UpchainRepository.pull(
     id: UpchainId,
     api: SyncApi,
+     onUpdatesFromServers: (updatesCount: Int) -> Unit,
+     onApplyServerUpdates: (updatesCount: Int) -> Unit,
 ): Result<UpchainHash?> = result {
     val logger = Logger.withTag("UpchainRepositorySyncExt.pull")
 
     val serverUpdates = ServerUpdatesProvider(
         id = id,
         api = api,
+        onUpdatesFromServers = onUpdatesFromServers,
     )
 
     editWithResult { upchain ->
@@ -75,6 +82,7 @@ private suspend fun UpchainRepository.pull(
                     },
                 )
         }
+        onApplyServerUpdates(serverUpdatesToApply.size)
 
         serverUpdatesToApply
             .takeIf(Collection<*>::isNotEmpty)
@@ -96,12 +104,14 @@ private suspend fun UpchainRepository.push(
     id: UpchainId,
     api: SyncApi,
     serverPeekHash: UpchainHash?,
+    onUpdatesToServer: (updatesCount: Int) -> Unit,
 ): Result<Boolean> = result {
 
     val sink = RemoteUpdatesSink(
         id = id,
         api = api,
         initialServerPeekHash = serverPeekHash,
+        onUpdatesToServer = onUpdatesToServer,
     )
 
     val upchain = upchain.value

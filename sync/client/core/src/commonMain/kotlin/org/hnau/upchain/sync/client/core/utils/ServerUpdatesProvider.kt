@@ -13,11 +13,13 @@ import org.hnau.upchain.sync.core.SyncHandle
 internal class ServerUpdatesProvider(
     id: UpchainId,
     api: SyncApi,
+    onUpdatesFromServers: (updatesCount: Int) -> Unit,
 ) {
 
     private class BatchesProvider(
         private val id: UpchainId,
         private val server: SyncApi,
+        private val onUpdatesFromServers: (updatesCount: Int) -> Unit,
     ) {
 
         private sealed interface ServerState {
@@ -47,9 +49,10 @@ internal class ServerUpdatesProvider(
                         )
                         .bind()
 
-                    val nonEmptyUpdates = response
-                        .updates
-                        .toNonEmptyListOrNull()
+                    val updates = response.updates
+                    onUpdatesFromServers(updates.size)
+
+                    val nonEmptyUpdates = updates.toNonEmptyListOrNull()
 
                     serverState = nonEmptyUpdates
                         ?.takeIf { response.hasMoreUpdates }
@@ -69,6 +72,7 @@ internal class ServerUpdatesProvider(
     private val batchesProvider = BatchesProvider(
         id = id,
         server = api,
+        onUpdatesFromServers = onUpdatesFromServers,
     )
 
     private var currentBatch: NonEmptyList<Upchain.Item>? = null

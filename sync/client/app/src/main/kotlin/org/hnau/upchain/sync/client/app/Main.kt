@@ -15,10 +15,10 @@ import org.hnau.upchain.core.UpchainId
 import org.hnau.upchain.core.repository.file.upchain.fileBased
 import org.hnau.upchain.core.repository.upchain.UpchainRepository
 import org.hnau.upchain.sync.client.app.utils.ServerHostArgType
+import org.hnau.upchain.sync.client.core.SyncListener
 import org.hnau.upchain.sync.client.core.sync
 import org.hnau.upchain.sync.client.http.HttpSyncClient
 import org.hnau.upchain.sync.core.ServerPort
-import org.hnau.upchain.sync.core.observe
 import org.hnau.upchain.sync.http.HttpScheme
 
 private val logger = Logger.withTag("Main")
@@ -67,6 +67,7 @@ fun main(args: Array<String>) {
             ifTrue = { HttpScheme.Https },
             ifFalse = { HttpScheme.Http },
         )
+
         val api = port
             ?.let(::ServerPort)
             .foldNullable(
@@ -86,14 +87,6 @@ fun main(args: Array<String>) {
                     )
                 }
             )
-            .observe(
-                onMaxToMinUpdates = { maxToMinUpdatesCount ->
-                    logger.i { "Received $maxToMinUpdatesCount updates from server" }
-                },
-                onUpdatesToAppend = { updatesToAppendCount ->
-                    logger.i { "Sent $updatesToAppendCount updates to server" }
-                },
-            )
 
         repository
             .sync(
@@ -102,6 +95,17 @@ fun main(args: Array<String>) {
                     .last()
                     .let(UpchainId.stringMapper.direct),
                 api = api,
+                listener = SyncListener(
+                    onUpdatesFromServers = { updatesCount ->
+                        logger.i { "Received $updatesCount updates from server" }
+                    },
+                    onApplyServerUpdates = { updatesCount ->
+                        logger.i { "Applied $updatesCount updates from server" }
+                    },
+                    onUpdatesToServer = { updatesCount ->
+                        logger.i { "Pushed $updatesCount updates to server" }
+                    }
+                )
             )
             .getOrThrow()
 
