@@ -16,7 +16,7 @@ import org.hnau.upchain.sync.core.SyncApi
 suspend fun UpchainRepository.sync(
     id: UpchainId,
     api: SyncApi,
-    listener: SyncListener,
+    listener: SyncListener = SyncListener(),
 ): Result<Unit> = result {
     val logger = Logger.withTag("UpchainRepositorySyncExt.sync")
 
