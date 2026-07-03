@@ -1,9 +1,12 @@
 FROM eclipse-temurin:21-jre
 
+RUN apt-get update && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY sync/server/app/build/install/app/ /app/
 
 HEALTHCHECK --interval=15s --timeout=5s --retries=3 --start-period=30s \
-    CMD ["bash", "-c", "exec 3<>/dev/tcp/localhost/8080"]
+    CMD curl -f http://localhost:8080/health || exit 1
 
 EXPOSE 8080
 

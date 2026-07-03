@@ -5,6 +5,7 @@ import io.ktor.server.engine.embeddedServer
 import io.ktor.server.plugins.origin
 import io.ktor.server.request.receiveText
 import io.ktor.server.response.respondText
+import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
 import kotlinx.coroutines.awaitCancellation
@@ -30,6 +31,10 @@ suspend fun httpSyncServer(
         port = port.port,
     ) {
         routing {
+            get("/health") {
+                call.respondText("OK")
+            }
+
             post(SyncConstantsHttp.route) {
                 serializedEngine.handle(
                     clientAddress = call.request.origin.remoteAddress,
