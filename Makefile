@@ -1,8 +1,11 @@
-.PHONY: build push
+.PHONY: build image push
 
 build:
 	./gradlew :sync:server:app:installDist --no-daemon -x test --build-cache
+
+image: build
 	docker build -t hnau256/upchain:latest .
 
-push: build
-	docker push hnau256/upchain:latest
+push: image
+	docker buildx build --platform linux/amd64,linux/arm64 \
+		-t hnau256/upchain:latest --push .
